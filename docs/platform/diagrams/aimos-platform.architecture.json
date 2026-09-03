@@ -1,0 +1,441 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Aimos 平台架构总览",
+    "locale": "zh-CN",
+    "output": "apps/architecture/platform-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "model-chain",
+        "label": "模型链路",
+        "focus": [
+          "ds-gitlab",
+          "mlflow",
+          "exp",
+          "mgmt",
+          "deploy",
+          "runtime"
+        ],
+        "note": "从实验代码到在线推理服务的模型交付主链"
+      },
+      {
+        "id": "feature-chain",
+        "label": "特征链路",
+        "focus": [
+          "hive",
+          "fs",
+          "online-store",
+          "runtime",
+          "exp"
+        ],
+        "note": "离在线一致的特征生产、训练取数与在线检索"
+      },
+      {
+        "id": "ai-assets",
+        "label": "AI 资产与入口",
+        "focus": [
+          "users",
+          "web",
+          "ai-hub",
+          "runtime"
+        ],
+        "note": "统一入口、平台治理与 AI 资产供给"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "users",
+      "type": "external",
+      "label": "平台用户",
+      "sublabel": "算法/DS/策略",
+      "pos": [
+        40,
+        112
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Aimos Web Console",
+      "sublabel": "统一导航 · RBAC · Console",
+      "pos": [
+        250,
+        112
+      ],
+      "size": [
+        165,
+        72
+      ]
+    },
+    {
+      "id": "exp",
+      "type": "backend",
+      "label": "Model Experiment",
+      "sublabel": "训练编排 · Experiment / Run",
+      "pos": [
+        540,
+        112
+      ],
+      "size": [
+        175,
+        76
+      ]
+    },
+    {
+      "id": "ray",
+      "type": "cloud",
+      "label": "Ray 集群",
+      "sublabel": "RayHub · Ray Tune",
+      "pos": [
+        960,
+        112
+      ],
+      "size": [
+        170,
+        72
+      ]
+    },
+    {
+      "id": "s3",
+      "type": "cloud",
+      "label": "S3",
+      "sublabel": "产物 / 日志 / 指标",
+      "pos": [
+        1170,
+        112
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "mlflow",
+      "type": "cloud",
+      "label": "MLflow",
+      "sublabel": "实验产物同步桥梁",
+      "pos": [
+        250,
+        262
+      ],
+      "size": [
+        165,
+        72
+      ]
+    },
+    {
+      "id": "mgmt",
+      "type": "backend",
+      "label": "Model Mgmt",
+      "sublabel": "Model / Version / Build",
+      "pos": [
+        540,
+        262
+      ],
+      "size": [
+        175,
+        64
+      ]
+    },
+    {
+      "id": "ds-gitlab",
+      "type": "external",
+      "label": "DS GitLab",
+      "sublabel": "算法工程仓",
+      "pos": [
+        40,
+        412
+      ],
+      "size": [
+        130,
+        64
+      ]
+    },
+    {
+      "id": "ai-hub",
+      "type": "backend",
+      "label": "AI Hub",
+      "sublabel": "LLM Mgmt · Skill Market · KB",
+      "pos": [
+        250,
+        412
+      ],
+      "size": [
+        165,
+        72
+      ]
+    },
+    {
+      "id": "deploy",
+      "type": "backend",
+      "label": "Model Deployment",
+      "sublabel": "Build 发布上线",
+      "pos": [
+        540,
+        412
+      ],
+      "size": [
+        175,
+        64
+      ]
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "Online Runtime",
+      "sublabel": "Orches Service · LLM Workflow",
+      "pos": [
+        830,
+        412
+      ],
+      "size": [
+        185,
+        96
+      ]
+    },
+    {
+      "id": "biz",
+      "type": "external",
+      "label": "业务系统",
+      "sublabel": "在线推理调用方",
+      "pos": [
+        1150,
+        412
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "hive",
+      "type": "database",
+      "label": "Hive",
+      "sublabel": "ODS · 训练宽表",
+      "pos": [
+        40,
+        552
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "fs",
+      "type": "backend",
+      "label": "Feature Store",
+      "sublabel": "DS→FS→TF→FG · 离在线一致性",
+      "pos": [
+        540,
+        552
+      ],
+      "size": [
+        175,
+        88
+      ],
+      "tag": "Train-Serve 一致"
+    },
+    {
+      "id": "online-store",
+      "type": "database",
+      "label": "HBase / Redis",
+      "sublabel": "在线特征存储",
+      "pos": [
+        1120,
+        552
+      ],
+      "size": [
+        160,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Aimos 平台（Monee 通用风控模型平台）",
+      "wraps": [
+        "web",
+        "exp",
+        "mlflow",
+        "mgmt",
+        "ai-hub",
+        "deploy",
+        "runtime",
+        "fs"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "id": "users-web",
+      "from": "users",
+      "to": "web",
+      "label": "HTTPS"
+    },
+    {
+      "id": "gitlab-mlflow",
+      "from": "ds-gitlab",
+      "to": "mlflow",
+      "label": "实验代码 / 配置",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          210,
+          444
+        ],
+        [
+          210,
+          298
+        ]
+      ]
+    },
+    {
+      "id": "mlflow-exp",
+      "from": "mlflow",
+      "to": "exp",
+      "label": "Experiment / Run 1:1 映射",
+      "variant": "emphasis",
+      "via": [
+        [
+          332.5,
+          220
+        ],
+        [
+          510,
+          220
+        ],
+        [
+          510,
+          150
+        ]
+      ],
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "exp-ray",
+      "from": "exp",
+      "to": "ray",
+      "label": "投递 RayUtil 脚本"
+    },
+    {
+      "id": "ray-s3",
+      "from": "ray",
+      "to": "s3",
+      "label": "落盘"
+    },
+    {
+      "id": "exp-mgmt",
+      "from": "exp",
+      "to": "mgmt",
+      "label": "Run SUCCESS · 注册 Build",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "mgmt-deploy",
+      "from": "mgmt",
+      "to": "deploy",
+      "label": "发布 Build",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "deploy-runtime",
+      "from": "deploy",
+      "to": "runtime",
+      "label": "部署为在线推理服务",
+      "variant": "emphasis"
+    },
+    {
+      "id": "biz-runtime",
+      "from": "biz",
+      "to": "runtime",
+      "label": "业务请求"
+    },
+    {
+      "id": "aihub-runtime",
+      "from": "ai-hub",
+      "to": "runtime",
+      "label": "LLM / Skill / KB 资产",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [
+        [
+          332.5,
+          530
+        ],
+        [
+          922.5,
+          530
+        ]
+      ],
+      "labelAt": [
+        420,
+        516
+      ]
+    },
+    {
+      "id": "fs-runtime",
+      "from": "fs",
+      "to": "runtime",
+      "label": "FG Serving · 在线特征"
+    },
+    {
+      "id": "fs-hive",
+      "from": "fs",
+      "to": "hive",
+      "label": "WideTable 产物",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelAt": [
+        516,
+        652
+      ]
+    },
+    {
+      "id": "fs-online-store",
+      "from": "fs",
+      "to": "online-store",
+      "label": "FeatureSource 取数",
+      "labelDy": 18
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "模型链路",
+      "items": [
+        "DS GitLab 实验代码经 MLflow 同步进入 Model Experiment",
+        "Experiment / Run 与 MLflow Experiment / Parent Run 1:1 映射，产物统一存 S3"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "特征链路",
+      "items": [
+        "DataSource → FeatureSource → Transformation → FeatureGroup 五层组装",
+        "FG 层绑定同一 Transformer Version，保障离在线一致性，避免 Training / Serving Skew"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "在线服务",
+      "items": [
+        "Orches Service 承载传统模型实时推理，LLM Workflow 编排 AI 服务，Agent App 预留",
+        "业务请求触发 FG Serving 在线特征检索与模型推理"
+      ]
+    }
+  ]
+}
