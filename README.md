@@ -33,7 +33,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | | Feature Tag | Placeholder | 特征标签管理（现内嵌于 Feature Map 过滤） |
 | | Wide Table | ✅ 原型已覆盖 | 离线宽表画布 |
 | | Architecture | 🟡 Placeholder | 入口在页面左下角页脚；原架构图资产已下线，待填充新内容 |
-| **Console** | User | Placeholder | 用户管理中心（Udf 暂不纳入） |
+| **Console** | User | ✅ 原型已覆盖 | 多 Biz Team 归属 + Team 内单角色（Viewer/Editor/Admin）+ Team Dir 管理；规格见 docs/user-mgmt/spec.md（Udf 暂不纳入） |
 | | Alert Group | Placeholder | 告警 webhook 配置 |
 | **Background Task** | — | Placeholder | 后台任务（独立顶级模块） |
 
@@ -76,8 +76,10 @@ Aimos MLOps/
 │   ├── feature-store/             # Feature Store 原型（Vite + React，来自 FeatureStore 仓库）
 │   │                              #   hash 路由：#/ds #/fs #/tf #/fg #/fm #/wt #/arch
 │   └── model-experiment/          # Model Experiment 原型（Vite + React，来自 ModelExperiment 仓库）
+│   └── user-mgmt/                 # Console / User 原型（纯静态 HTML/CSS/JS，无构建）
 ├── docs/
 │   ├── platform/                  # 平台级文档（架构总览、模块清单）
+│   ├── user-mgmt/                 # User 模块领域规则与交互规格
 │   ├── feature-store/             # Feature Store 设计文档（架构 / PRD / 前端规格 / API / 调研）
 │   └── model-experiment/          # Model Experiment 文档（系统架构 / PRD / 流水线 / 术语表 / API）
 └── .github/workflows/
