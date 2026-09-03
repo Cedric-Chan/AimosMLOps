@@ -1,0 +1,173 @@
+openapi: 3.1.0
+info:
+  title: Feature Map API
+  version: 1.0.0-mvp
+  description: |
+    检索、Feature Cart、只读 Feature 资产目录。
+    与架构说明 §4.4、《产品原型图》§3.4 对齐。
+    FeatureMap 只读 — 数据由 FeatureGroup 注册/发布同步。
+
+servers:
+  - url: /api/v1
+
+paths:
+  /feature-map/search:
+    get:
+      operationId: searchFeatures
+      summary: 跨已注册 Feature Group 检索 Feature
+      parameters:
+        - name: keyword
+          in: query
+          schema: { type: string }
+          description: 对 Feature 名、FG 名或描述全文检索
+        - name: entity
+          in: query
+          schema: { type: string }
+        - name: bizTeam
+          in: query
+          schema: { type: string }
+          description: 按 Biz Team 过滤（可见性筛选，非权限墙）
+        - name: module
+          in: query
+          schema: { type: string }
+        - name: region
+          in: query
+          schema: { type: string }
+        - name: featureGroup
+          in: query
+          schema: { type: string }
+        - name: trainingAvailable
+          in: query
+          schema: { type: boolean }
+        - name: servingAvailable
+          in: query
+          schema: { type: boolean }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/FeatureMapEntry" }
+
+  /feature-map/modules:
+    get:
+      operationId: listModules
+      summary: 获取左侧导航 Module 树（Module > FG 层级）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modules:
+                    type: array
+                    items: { $ref: "#/components/schemas/ModuleNode" }
+
+  /feature-map/feature-groups/{fgId}:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getFeatureGroupInMap
+      summary: 获取 FG 摘要及全部 Feature（FeatureMap 只读视图）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureGroupMapView" }
+
+  /feature-map/cart:
+    post:
+      operationId: submitFeatureCart
+      summary: 将购物车中选中的 Feature 提交到目标画布
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [featureIds, target]
+              properties:
+                featureIds:
+                  type: array
+                  items: { type: string }
+                  description: 待提交的 Feature ID 列表
+                target:
+                  type: string
+                  enum: [training_widetable, serving_workflow]
+                  description: |
+                    training_widetable：跳转 WideTable 画布创建。
+                    serving_workflow：跳转 Serving Workflow 画布创建。
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirectUrl: { type: string }
+                  featureGroupIds:
+                    type: array
+                    items: { type: string }
+                    description: 由所选 Feature 去重得到的 FG ID 列表
+
+components:
+  schemas:
+    FeatureMapEntry:
+      type: object
+      properties:
+        featureId: { type: string }
+        featureName: { type: string }
+        dataType: { type: string }
+        featureGroupId: { type: string }
+        featureGroupName: { type: string }
+        module: { type: string }
+        entity: { type: string }
+        region: { type: string }
+        trainingAvailability: { type: boolean }
+        servingAvailability: { type: boolean }
+        updateTime: { type: string, format: date-time }
+
+    ModuleNode:
+      type: object
+      properties:
+        name: { type: string }
+        featureCount: { type: integer }
+        featureGroups:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+              featureCount: { type: integer }
+
+    FeatureGroupMapView:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        module: { type: string }
+        entity: { type: string }
+        region: { type: string }
+        bizTeam: { type: string }
+        description: { type: string }
+        features:
+          type: array
+          items: { $ref: "#/components/schemas/FeatureMapEntry" }

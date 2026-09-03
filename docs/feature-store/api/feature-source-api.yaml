@@ -1,0 +1,402 @@
+openapi: 3.1.0
+info:
+  title: Feature Source API
+  version: 1.0.0-mvp
+  description: |
+    Feature Source 及其 Region Config 的 CRUD、Test、Manage 操作。
+    与架构说明 §4.1、《产品原型图》§3.1 对齐。
+
+servers:
+  - url: /api/v1
+
+paths:
+  /feature-sources:
+    get:
+      operationId: listFeatureSources
+      summary: 按条件分页查询 Feature Source
+      parameters:
+        - name: name
+          in: query
+          schema: { type: string }
+          description: 对 FS 名称模糊匹配
+        - name: sourceType
+          in: query
+          schema: { $ref: "#/components/schemas/SourceType" }
+        - name: region
+          in: query
+          schema: { $ref: "#/components/schemas/Region" }
+        - name: creator
+          in: query
+          schema: { type: string }
+          description: 对创建人邮箱模糊匹配
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: 分页列表，含嵌套的 Region Config
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/FeatureSourceWithRegions" }
+    post:
+      operationId: createFeatureSource
+      summary: 新建 Feature Source（仅元信息）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FeatureSourceCreate" }
+      responses:
+        "201":
+          description: 已创建
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureSource" }
+        "400":
+          description: 校验错误
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /feature-sources/{fsId}:
+    parameters:
+      - name: fsId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getFeatureSource
+      summary: 获取 Feature Source 详情及全部 Region Config
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureSourceWithRegions" }
+        "404":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    put:
+      operationId: updateFeatureSource
+      summary: 更新 Feature Source 元信息（name 只读）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FeatureSourceUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureSource" }
+    delete:
+      operationId: deleteFeatureSource
+      summary: 删除整个 Feature Source（任一 Region 为 ONLINE 则拒绝）
+      responses:
+        "204":
+          description: 已删除
+        "409":
+          description: 存在 ONLINE 的 Region Config，需先下线
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /feature-sources/{fsId}/regions:
+    parameters:
+      - name: fsId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: addRegionConfig
+      summary: 在该 FS 下新增 Region Config（状态为 DRAFT）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegionConfigCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegionConfig" }
+
+  /feature-sources/{fsId}/regions/{regionConfigId}:
+    parameters:
+      - name: fsId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: regionConfigId
+        in: path
+        required: true
+        schema: { type: string }
+    put:
+      operationId: updateRegionConfig
+      summary: 更新 Region Config（Input/Output Params、Call Function、Description）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegionConfigUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegionConfig" }
+
+  /feature-sources/{fsId}/regions/{regionConfigId}/copy:
+    parameters:
+      - name: fsId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: regionConfigId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: copyRegionConfig
+      summary: 复制 Region Config 到新 Region（状态为 DRAFT）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [region]
+              properties:
+                region: { $ref: "#/components/schemas/Region" }
+                description: { type: string }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegionConfig" }
+
+  /feature-sources/{fsId}/regions/{regionConfigId}/manage:
+    parameters:
+      - name: fsId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: regionConfigId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: manageRegionConfig
+      summary: 状态流转（Enable / Disable / Draft / Delete）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [enable, disable, draft, delete]
+      responses:
+        "200":
+          description: 状态已流转
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegionConfig" }
+        "409":
+          description: 非法状态流转或存在下游依赖
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /feature-sources/{fsId}/test:
+    parameters:
+      - name: fsId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: testFeatureSource
+      summary: 对指定 Region Config 执行一次 Test
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [regionConfigId, inputParams]
+              properties:
+                regionConfigId: { type: string }
+                inputParams:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        "200":
+          description: Test 结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [success, failed] }
+                  outputParams:
+                    type: object
+                    additionalProperties: true
+                  durationMs: { type: integer }
+                  errorMessage: { type: string }
+
+  /feature-sources/{fsId}/test/history:
+    parameters:
+      - name: fsId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listTestHistory
+      summary: 查询该 Feature Source 的 Test 历史
+      parameters:
+        - name: region
+          in: query
+          schema: { $ref: "#/components/schemas/Region" }
+        - name: operator
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [success, failed] }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/TestHistoryEntry" }
+
+components:
+  schemas:
+    SourceType:
+      type: string
+      enum: [HBase, Redis, gRPC, GraphDB]
+      description: MVP 数据源类型（MySQL、Kafka 预留二期）
+
+    Region:
+      type: string
+      enum: [ID, TH, MX, SG, PH, VN, SHOPEE_SG]
+
+    RegionConfigStatus:
+      type: string
+      enum: [DRAFT, ENABLE, DISABLE]
+      description: |
+        内部枚举。展示文案：DRAFT、ONLINE（对应 ENABLE）、OFFLINE（对应 DISABLE）。
+
+    FeatureSource:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        sourceType: { $ref: "#/components/schemas/SourceType" }
+        dataLatency: { type: string, enum: [Online, Nearline, Offline] }
+        description: { type: string }
+        creator: { type: string }
+        createTime: { type: string, format: date-time }
+
+    FeatureSourceCreate:
+      type: object
+      required: [name, sourceType, dataLatency]
+      properties:
+        name: { type: string, pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$" }
+        sourceType: { $ref: "#/components/schemas/SourceType" }
+        dataLatency: { type: string, enum: [Online, Nearline, Offline] }
+        description: { type: string }
+
+    FeatureSourceUpdate:
+      type: object
+      properties:
+        sourceType: { $ref: "#/components/schemas/SourceType" }
+        dataLatency: { type: string, enum: [Online, Nearline, Offline] }
+        description: { type: string }
+
+    RegionConfig:
+      type: object
+      properties:
+        id: { type: string }
+        featureSourceId: { type: string }
+        region: { $ref: "#/components/schemas/Region" }
+        callFunction: { type: string }
+        inputParams:
+          type: array
+          items: { type: string }
+        outputParams:
+          type: array
+          items: { type: string }
+        status: { $ref: "#/components/schemas/RegionConfigStatus" }
+        updateTime: { type: string, format: date-time }
+
+    RegionConfigCreate:
+      type: object
+      required: [region]
+      properties:
+        region: { $ref: "#/components/schemas/Region" }
+        callFunction: { type: string }
+        inputParams:
+          type: array
+          items: { type: string }
+        outputParams:
+          type: array
+          items: { type: string }
+        description: { type: string }
+
+    RegionConfigUpdate:
+      type: object
+      properties:
+        callFunction: { type: string }
+        inputParams:
+          type: array
+          items: { type: string }
+        outputParams:
+          type: array
+          items: { type: string }
+        description: { type: string }
+
+    FeatureSourceWithRegions:
+      allOf:
+        - $ref: "#/components/schemas/FeatureSource"
+        - type: object
+          properties:
+            regionConfigs:
+              type: array
+              items: { $ref: "#/components/schemas/RegionConfig" }
+
+    TestHistoryEntry:
+      type: object
+      properties:
+        id: { type: string }
+        region: { $ref: "#/components/schemas/Region" }
+        createTime: { type: string, format: date-time }
+        operator: { type: string }
+        status: { type: string, enum: [success, failed] }
+        inputParams: { type: object, additionalProperties: true }
+        outputParams: { type: object, additionalProperties: true }
+        durationMs: { type: integer }
+
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object }
