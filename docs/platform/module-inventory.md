@@ -38,7 +38,7 @@
 | Transformation | ✅ | 特征转换加工（`#/tf`） | — |
 | Feature Group | ✅ | 特征包组装与 Train-Serve 双模式（`#/fg`） | — |
 | Feature Map | ✅ | 特征检索文档（`#/fm`） | — |
-| Entity | 🟡 | 特征实体管理；**原型暂缺独立页面** | Entity 列表与定义表单 |
+| Feature Entity | 🟡 | 特征实体管理；**原型暂缺独立页面** | Entity 列表与定义表单 |
 | Feature Tag | 🟡 | 特征标签管理；**原型暂缺独立页面**（现内嵌于 Feature Map 过滤面板，数据见原型 tagCatalog） | 独立标签管理页 |
 | Wide Table | ✅ | 离线宽表画布（`#/wt`） | — |
 | Architecture | 🟡 | 入口在页面左下角页脚（不在导航组内）；原 /arch 原型资产已下线 | 待填充：新架构图、数据流说明 |

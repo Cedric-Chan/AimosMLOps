@@ -29,7 +29,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | | Transformation | ✅ 原型已覆盖 | 特征转换加工 |
 | | Feature Group | ✅ 原型已覆盖 | 特征包组装与在线/离线 Serving |
 | | Feature Map | ✅ 原型已覆盖 | 特征检索文档 |
-| | Entity | Placeholder | 特征实体管理（原型暂缺独立页） |
+| | Feature Entity | Placeholder | 特征实体管理（原型暂缺独立页） |
 | | Feature Tag | Placeholder | 特征标签管理（现内嵌于 Feature Map 过滤） |
 | | Wide Table | ✅ 原型已覆盖 | 离线宽表画布 |
 | | Architecture | 🟡 Placeholder | 入口在页面左下角页脚；原架构图资产已下线，待填充新内容 |
