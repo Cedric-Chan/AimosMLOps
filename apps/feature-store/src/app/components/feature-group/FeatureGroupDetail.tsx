@@ -135,18 +135,38 @@ interface VersionRow {
   version: string;
   createdAt: string;
   createdBy: string;
-  status: string;
+  status: "Draft" | "Published" | "Offline";
   publishedAt: string;
   isCurrent: boolean;
   config: VersionConfig;
 }
 
+const STATUS_META: Record<VersionRow["status"], { dot: string; text: string }> = {
+  Draft:     { dot: "#f59e0b", text: "#b45309" },
+  Published: { dot: "#10b981", text: "#047857" },
+  Offline:   { dot: "#9ca3af", text: "#6b7280" },
+};
+
 const DEFAULT_VERSIONS: VersionRow[] = [
+  {
+    version: "v4",
+    createdAt: "2026-03-02 10:20",
+    createdBy: "cedric.chencan@seamoney.com",
+    status: "Draft",
+    publishedAt: "—",
+    isCurrent: false,
+    config: {
+      dataServer: "reg_sg_hive", tableSchema: "risk_db", tableName: "user_risk_score_ods",
+      datePartition: "dt", partitionType: "Incremental Data", updateFrequency: "Daily",
+      entitiesColumns: ["platform_user_id"], filter: "dt='2026-03-02'",
+      dataLatency: "Online", featureSource: "riskfeat_hbase_th", sourceType: "HBase", transformation: "QueryAaiCache@V4",
+    },
+  },
   {
     version: "v3",
     createdAt: "2026-02-16 08:30",
     createdBy: "cedric.chencan@seamoney.com",
-    status: "Online",
+    status: "Published",
     publishedAt: "2026-02-16 09:00",
     isCurrent: true,
     config: {
@@ -1372,6 +1392,7 @@ function VersionHistoryTab() {
         <thead>
           <tr style={{ backgroundColor: "#fafafa" }} className="border-b border-gray-100 text-xs text-gray-500">
             <th className="px-5 py-3 text-left" style={{ fontWeight: 600 }}>Version</th>
+            <th className="px-5 py-3 text-left" style={{ fontWeight: 600 }}>Status</th>
             <th
               className="px-5 py-3 text-left"
               style={{ fontWeight: 600 }}
@@ -1404,23 +1425,29 @@ function VersionHistoryTab() {
                   )}
                 </div>
               </td>
+              <td className="px-5 py-3.5">
+                <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: STATUS_META[v.status].text }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_META[v.status].dot }} />
+                  {v.status}
+                </span>
+              </td>
               <td className="px-5 py-3.5 text-xs text-gray-500">{v.createdAt}</td>
               <td className="px-5 py-3.5 text-xs text-gray-600">{v.createdBy}</td>
               <td className="px-5 py-3.5 text-xs text-gray-500">{v.publishedAt}</td>
               <td className="px-5 py-3.5">
-                <div className="flex items-center gap-2">
-                  {/* Details — trigger + tooltip both cancel the hide timer on hover */}
+                <div className="flex items-center gap-2 text-xs">
+                  {/* View — hover/click opens the config viewer */}
                   <div
                     className="relative"
                     onMouseEnter={() => showTooltip(v.version)}
                     onMouseLeave={scheduleHide}
                   >
                     <button
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border border-gray-200 text-gray-600 hover:border-teal-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
-                      style={{ fontWeight: 500 }}
+                      className="text-xs transition-colors hover:underline"
+                      style={{ color: "#0e9494", fontWeight: 500 }}
+                      onClick={() => setHovered(hovered === v.version ? null : v.version)}
                     >
-                      <Info size={11} />
-                      Details
+                      View
                     </button>
 
                     {hovered === v.version && (
@@ -1502,6 +1529,40 @@ function VersionHistoryTab() {
                       </div>
                     )}
                   </div>
+
+                  <span className="text-gray-200">|</span>
+                  <button
+                    onClick={(e) => handleCopy(v, e)}
+                    className="text-xs transition-colors hover:underline"
+                    style={{ color: copied === v.version ? "#1a7f37" : "#0e9494", fontWeight: 500 }}
+                  >
+                    {copied === v.version ? "Copied!" : "Copy"}
+                  </button>
+
+                  {v.status === "Published" && (
+                    <>
+                      <span className="text-gray-200">|</span>
+                      <button
+                        className="text-xs transition-colors hover:underline"
+                        style={{ color: "#e5484d", fontWeight: 500 }}
+                        onClick={() => toast(`Offline request submitted for ${v.version} (mock)`)}
+                      >
+                        Offline
+                      </button>
+                    </>
+                  )}
+                  {v.status === "Offline" && (
+                    <>
+                      <span className="text-gray-200">|</span>
+                      <button
+                        className="text-xs transition-colors hover:underline"
+                        style={{ color: "#e5484d", fontWeight: 500 }}
+                        onClick={() => toast(`Delete request submitted for ${v.version} (mock)`)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
 
                 </div>
               </td>
