@@ -1141,33 +1141,60 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
 // ─── Used By Tab — downstream assets referencing this FG ─────────────────────
 
 interface DownstreamAsset {
-  assetType: "Feature WideTable" | "Workflow Service";
+  servingType: "training" | "serving";
+  version: string;
+  assetType: "Feature WideTable" | "Orches Service";
   assetName: string;
   owner: string;
 }
 
 const MOCK_DOWNSTREAM: DownstreamAsset[] = [
-  { assetType: "Feature WideTable", assetName: "risk_score_sg_v3_wt", owner: "zhangsan" },
-  { assetType: "Feature WideTable", assetName: "credit_features_th_wt", owner: "lisi" },
-  { assetType: "Workflow Service", assetName: "fraud-detection-sg-svc", owner: "wangwu" },
-  { assetType: "Workflow Service", assetName: "credit-scoring-online-svc", owner: "zhaoliu" },
+  { servingType: "training", version: "v2", assetType: "Feature WideTable", assetName: "risk_score_sg_v3_wt",    owner: "zhangsan" },
+  { servingType: "serving",  version: "v5", assetType: "Orches Service",    assetName: "credit_scoring_online",  owner: "lisi" },
+  { servingType: "training", version: "v3", assetType: "Feature WideTable", assetName: "credit_features_th_wt",  owner: "lisi" },
+  { servingType: "serving",  version: "v2", assetType: "Orches Service",    assetName: "fraud_detection_sg",     owner: "wangwu" },
+  { servingType: "training", version: "v1", assetType: "Feature WideTable", assetName: "anti_fraud_mx_wt",       owner: "zhaoliu" },
+  { servingType: "serving",  version: "v8", assetType: "Orches Service",    assetName: "rta_feature_serving",    owner: "sunqi" },
+  { servingType: "training", version: "v4", assetType: "Feature WideTable", assetName: "user_profile_sg_wt",     owner: "zhoujielun" },
+  { servingType: "serving",  version: "v1", assetType: "Orches Service",    assetName: "limit_adjust_svc",       owner: "wushi" },
 ];
 
+const USED_BY_PAGE_SIZE = 5;
+
 function LineageTab() {
+  const [page, setPage] = useState(1);
+  const total = MOCK_DOWNSTREAM.length;
+  const totalPages = Math.max(1, Math.ceil(total / USED_BY_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = MOCK_DOWNSTREAM.slice((safePage - 1) * USED_BY_PAGE_SIZE, safePage * USED_BY_PAGE_SIZE);
+
   return (
     <div className="bg-white rounded-xl border border-gray-200" style={{ minHeight: 300 }}>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50">
+              <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Serving Type</th>
+              <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Version</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Type</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Name</th>
-              <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Owner</th>
+              <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Owner</th>
             </tr>
           </thead>
           <tbody>
-            {MOCK_DOWNSTREAM.map((item, idx) => (
+            {pageRows.map((item, idx) => (
               <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50/40 transition-colors">
+                <td className="px-5 py-3 text-gray-600">
+                  <span className={`inline-flex items-center gap-1.5 ${
+                    item.servingType === "training" ? "text-amber-700" : "text-teal-700"
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      item.servingType === "training" ? "bg-amber-400" : "bg-teal-400"
+                    }`} />
+                    {item.servingType}
+                  </span>
+                </td>
+                <td className="px-5 py-3 font-mono text-gray-600">{item.version}</td>
                 <td className="px-5 py-3 text-gray-600">
                   <span className={`inline-flex items-center gap-1.5 ${
                     item.assetType === "Feature WideTable" ? "text-emerald-700" : "text-violet-700"
@@ -1184,6 +1211,45 @@ function LineageTab() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination — bottom-right */}
+      <div className="flex items-center justify-end px-5 py-3 border-t border-gray-100">
+        <span className="mr-3 text-xs text-gray-400">
+          {total === 0
+            ? "0 items"
+            : `${(safePage - 1) * USED_BY_PAGE_SIZE + 1}–${Math.min(safePage * USED_BY_PAGE_SIZE, total)} of ${total} items`}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={safePage === 1}
+            className="px-2.5 py-1 text-xs border border-gray-200 rounded hover:border-teal-400 hover:text-teal-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            «
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPage(p)}
+              className={`w-7 h-7 text-xs rounded border transition-colors ${
+                p === safePage
+                  ? "border-teal-500 bg-teal-500 text-white"
+                  : "border-gray-200 hover:border-teal-400 hover:text-teal-600"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage === totalPages}
+            className="px-2.5 py-1 text-xs border border-gray-200 rounded hover:border-teal-400 hover:text-teal-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            »
+          </button>
+          <span className="ml-2 text-xs text-gray-400">{USED_BY_PAGE_SIZE} / page</span>
+        </div>
       </div>
     </div>
   );
