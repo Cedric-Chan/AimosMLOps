@@ -93,7 +93,7 @@ const NAV = [
       { id: 'transformation', label: 'Transformation', type: 'iframe', app: FS_APP, route: '#/tf' },
       { id: 'feature-group', label: 'Feature Group', type: 'iframe', app: FS_APP, route: '#/fg' },
       { id: 'feature-map', label: 'Feature Map', type: 'iframe', app: FS_APP, route: '#/fm' },
-      { id: 'entity', label: 'Entity', type: 'placeholder',
+      { id: 'entity', label: 'Feature Entity', type: 'placeholder',
         desc: '特征实体（Entity）管理：特征所挂载的业务主体定义。现有 Feature Store 原型未覆盖独立 Entity 页面，占位待设计。',
         notes: ['真实平台 Feature Store 导航项，原型暂缺', '概念定义参见特征平台架构说明'],
         doc: `${GITHUB_BASE}/docs/feature-store/architecture/在线特征平台架构说明.md` },
