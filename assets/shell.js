@@ -20,6 +20,7 @@ const ICONS = {
 
 const FS_APP = 'apps/feature-store/index.html';
 const ME_APP = 'apps/model-experiment/index.html';
+const USER_APP = 'apps/user-mgmt/index.html';
 
 const NAV = [
   {
@@ -111,10 +112,8 @@ const NAV = [
     label: 'Console',
     icon: ICONS.console,
     items: [
-      { id: 'user', label: 'User', type: 'placeholder',
-        desc: '用户管理中心：账号、角色与权限管理。原型待设计。',
-        notes: ['对应线上平台 Console / User 页面（Udf 模块暂不纳入）'],
-        doc: `${GITHUB_BASE}/docs/platform/module-inventory.md` },
+      { id: 'user', label: 'User', type: 'iframe', app: USER_APP,
+        desc: '用户管理中心原型：用户可归属多个 Biz Team，Team 内角色分 VIEWER / EDITOR / ADMIN；列表按 Email + Biz Team 聚合展示；superadmin 经 Team Dir 浮窗管理 Biz Team 目录。' },
       { id: 'alert-group', label: 'Alert Group', type: 'placeholder',
         desc: '告警组：配置告警 webhook 的地方。原型待设计。',
         notes: ['对应线上平台 Console / Alert Group 页面', '待补充：告警组列表、webhook 配置表单'],
