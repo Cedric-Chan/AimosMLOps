@@ -48,7 +48,7 @@
 | 子模块 | 状态 | 说明 | 待设计事项 |
 |--------|------|------|-----------|
 | User | ✅ | 用户管理中心：多 Biz Team 归属，Team 内单角色（VIEWER/EDITOR/ADMIN），按 Email + Biz Team 聚合展示，superadmin 经 Team Dir 管理 Team 目录。原型 `apps/user-mgmt/`，规格见 [user-mgmt/spec.md](../user-mgmt/spec.md) | 非 superadmin 可见范围、Team ADMIN 权限边界待与工程确认 |
-| Alert Group | 🟡 | 配置告警 webhook | 告警组列表、webhook 配置表单 |
+| Alert Group | ✅ | 告警接收组管理：Name（唯一）/ Type（SeaTalk）/ Webhook；Verify 向 webhook 发送测试消息（原型为动效演示）。原型 `apps/alert-group/` | 待确认：Type 扩展（Lark / 钉钉等）、Delete 对已引用告警的级联策略 |
 | Background Task | 🟡 | 独立顶级模块；后台异步任务查询与管理 | 任务列表、重试 / 终止操作 |
 | ~~Udf~~ | — | 暂不纳入（线上平台存在，本 demo 排除） | — |
 
