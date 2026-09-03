@@ -34,7 +34,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | | Wide Table | ✅ 原型已覆盖 | 离线宽表画布 |
 | | Architecture | 🟡 Placeholder | 入口在页面左下角页脚；原架构图资产已下线，待填充新内容 |
 | **Console** | User | ✅ 原型已覆盖 | 多 Biz Team 归属 + Team 内单角色（Viewer/Editor/Admin）+ Team Dir 管理；规格见 docs/user-mgmt/spec.md（Udf 暂不纳入） |
-| | Alert Group | Placeholder | 告警 webhook 配置 |
+| | Alert Group | ✅ 原型已覆盖 | 告警接收组（Name / Type / Webhook）管理，Verify 发送测试消息动效 |
 | **Background Task** | — | Placeholder | 后台任务（独立顶级模块） |
 
 ## 平台架构总览
@@ -77,6 +77,7 @@ Aimos MLOps/
 │   │                              #   hash 路由：#/ds #/fs #/tf #/fg #/fm #/wt #/arch
 │   └── model-experiment/          # Model Experiment 原型（Vite + React，来自 ModelExperiment 仓库）
 │   └── user-mgmt/                 # Console / User 原型（纯静态 HTML/CSS/JS，无构建）
+│   └── alert-group/               # Console / Alert Group 原型（纯静态，无构建）
 ├── docs/
 │   ├── platform/                  # 平台级文档（架构总览、模块清单）
 │   ├── user-mgmt/                 # User 模块领域规则与交互规格
