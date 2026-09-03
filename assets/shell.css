@@ -31,8 +31,43 @@ body {
   flex-direction: column;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
-  overflow: hidden;
+  position: relative;
+  transition: width .2s ease, min-width .2s ease;
 }
+
+/* ---------- 侧边栏收起态（对齐真实平台：仅模块图标，当前模块高亮） ---------- */
+#sidebar.collapsed { width: 64px; min-width: 64px; }
+#sidebar.collapsed .brand { justify-content: center; padding: 18px 0 14px; }
+#sidebar.collapsed .brand-name { display: none; }
+#sidebar.collapsed #nav { padding: 10px 8px 20px; }
+#sidebar.collapsed .module-header { justify-content: center; padding: 10px 0; gap: 0; }
+#sidebar.collapsed .module-header > span:not(.icon) { display: none; }
+#sidebar.collapsed .module-header .chevron { display: none; }
+#sidebar.collapsed .module-items { display: none !important; }
+#sidebar.collapsed .sidebar-footer a { justify-content: center; padding: 7px 0; margin: 0; }
+#sidebar.collapsed .sidebar-footer a span { display: none; }
+#sidebar.collapsed .footer-note { display: none; }
+
+.sidebar-toggle {
+  position: absolute;
+  top: 58px;
+  right: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  z-index: 30;
+}
+.sidebar-toggle:hover { color: var(--teal); border-color: var(--teal); }
+.sidebar-toggle svg { width: 11px; height: 11px; transition: transform .2s ease; }
+#sidebar.collapsed .sidebar-toggle svg { transform: rotate(180deg); }
 
 .brand {
   display: flex;
@@ -63,13 +98,14 @@ body {
   border: none;
   background: none;
   cursor: pointer;
-  color: var(--teal-dark);
+  color: var(--text);
   font-size: 13.5px;
   font-weight: 600;
   border-radius: 6px;
   text-align: left;
 }
 .module-header:hover { background: var(--item-hover); }
+.module-header.active-header { color: var(--teal-dark); }
 .module-header .icon { display: grid; place-items: center; flex-shrink: 0; }
 .module-header .icon svg { width: 16px; height: 16px; stroke: currentColor; }
 .module-header .chevron {
@@ -112,9 +148,6 @@ body {
   padding: 1px 8px;
   line-height: 1.4;
 }
-
-.module-standalone .module-header { color: var(--text); font-weight: 500; }
-.module-standalone .module-header.active-header { background: var(--item-active); font-weight: 600; }
 
 .sidebar-footer {
   padding: 10px 16px;
