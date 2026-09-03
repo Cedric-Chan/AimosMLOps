@@ -32,7 +32,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | | Entity | Placeholder | 特征实体管理（原型暂缺独立页） |
 | | Feature Tag | Placeholder | 特征标签管理（现内嵌于 Feature Map 过滤） |
 | | Wide Table | ✅ 原型已覆盖 | 离线宽表画布 |
-| | Architecture | ✅ 原型已覆盖 | 五层架构 + 数据流图（demo 附加入口，线上平台无此项） |
+| | Architecture | 🟡 Placeholder | 入口在页面左下角页脚；原架构图资产已下线，待填充新内容 |
 | **Console** | User | Placeholder | 用户管理中心（Udf 暂不纳入） |
 | | Alert Group | Placeholder | 告警 webhook 配置 |
 | **Background Task** | — | Placeholder | 后台任务（独立顶级模块） |
