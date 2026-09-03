@@ -100,8 +100,10 @@ const NAV = [
         notes: ['真实平台 Feature Store 导航项，原型暂缺独立页面', '现有标签数据目录见原型 tagCatalog'],
         doc: `${GITHUB_BASE}/docs/feature-store/architecture/在线特征平台架构说明.md` },
       { id: 'wide-table', label: 'Wide Table', type: 'iframe', app: FS_APP, route: '#/wt' },
-      { id: 'architecture', label: 'Architecture', type: 'iframe', app: FS_APP, route: '#/arch',
-        desc: 'Feature Store 五层架构与数据流图（原型内置 Architect 页）。' },
+      // Architecture 入口固定在左下角页脚（hidden 不进导航）；原 /arch 原型资产已下线，待填充新内容
+      { id: 'architecture', label: 'Architecture', hidden: true, type: 'placeholder',
+        desc: '平台架构内容占位：原 Feature Store 架构图资产已下线，新的架构与数据流内容将在此填充。',
+        notes: ['入口固定在页面左下角页脚', '待填充：新架构图、数据流说明'] },
     ],
   },
   {
@@ -167,6 +169,7 @@ function renderNav() {
     const itemsEl = document.createElement('div');
     itemsEl.className = 'module-items';
     for (const item of mod.items) {
+      if (item.hidden) continue;
       const btn = document.createElement('button');
       btn.className = 'nav-item';
       btn.dataset.key = `${mod.id}/${item.id}`;
@@ -183,6 +186,8 @@ function renderNav() {
 }
 
 function highlight(key) {
+  const archLink = document.getElementById('arch-link');
+  if (archLink) archLink.classList.toggle('active', key === 'feature-store/architecture');
   navEl.querySelectorAll('.nav-item').forEach((el) => {
     el.classList.toggle('active', el.dataset.key === key);
   });

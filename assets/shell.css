@@ -117,11 +117,29 @@ body {
 .module-standalone .module-header.active-header { background: var(--item-active); font-weight: 600; }
 
 .sidebar-footer {
-  padding: 10px 20px;
+  padding: 10px 16px;
   border-top: 1px solid var(--border);
   font-size: 11.5px;
   color: var(--text-faint);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
+.sidebar-footer a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  margin: 0 -6px;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+}
+.sidebar-footer a svg { width: 14px; height: 14px; stroke: currentColor; }
+.sidebar-footer a:hover { background: var(--item-hover); }
+.sidebar-footer a.active { background: var(--item-active); font-weight: 600; }
+.footer-note { padding-left: 2px; }
 
 /* ---------- Content ---------- */
 #content { flex: 1; overflow: hidden; background: #fff; position: relative; }
