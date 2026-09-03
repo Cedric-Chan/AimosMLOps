@@ -1,0 +1,461 @@
+openapi: 3.1.0
+info:
+  title: Feature Group API
+  version: 1.0.0-mvp
+  description: |
+    Feature Group 的 CRUD、Publish、Sync、Serving Canvas 操作。
+    与架构说明 §4.3/§4.5、《产品原型图》§3.3 对齐。
+    FG 为无状态设计，不存在 Draft / Online / Online Changing 等状态流转。
+
+servers:
+  - url: /api/v1
+
+paths:
+  /feature-groups:
+    get:
+      operationId: listFeatureGroups
+      summary: 按条件分页查询 Feature Group
+      parameters:
+        - name: name
+          in: query
+          schema: { type: string }
+        - name: region
+          in: query
+          schema: { type: string }
+        - name: bizTeam
+          in: query
+          schema: { type: string }
+        - name: module
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/FeatureGroupSummary" }
+
+    post:
+      operationId: createFeatureGroup
+      summary: 新建 Feature Group（仅 Basic Info）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FGBasicInfoCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureGroupDetail" }
+
+  /feature-groups/{fgId}:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getFeatureGroup
+      summary: 获取 Feature Group 完整详情（Basic + Training + Serving + Features）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureGroupDetail" }
+    delete:
+      operationId: deleteFeatureGroup
+      summary: 软删 Feature Group（需确认下游依赖影响）
+      responses:
+        "204":
+          description: 已删除
+        "409":
+          description: 存在不可忽略的下游依赖
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /feature-groups/{fgId}/basic-info:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    put:
+      operationId: updateBasicInfo
+      summary: 更新 Basic Info
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FGBasicInfoUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureGroupDetail" }
+
+  /feature-groups/{fgId}/training-config:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    put:
+      operationId: updateTrainingConfig
+      summary: 保存 Training Config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TrainingConfig" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureGroupDetail" }
+
+  /feature-groups/{fgId}/serving-config:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getServingConfig
+      summary: 获取当前 Serving Config（画布模型）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ServingConfig" }
+    put:
+      operationId: updateServingConfig
+      summary: 保存 Serving Config 画布状态
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ServingConfig" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ServingConfig" }
+
+  /feature-groups/{fgId}/serving-config/publish:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: publishServingConfig
+      summary: 发布 Serving Config（需 Test Run 已通过）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureGroupDetail" }
+        "409":
+          description: Test Run 未通过
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /feature-groups/{fgId}/serving-config/test-run:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: servingTestRun
+      summary: 执行 Serving Test Run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fileFormat: { type: string }
+                fileUrl: { type: string }
+                filePwd: { type: string }
+                requestSource: { type: string }
+                meta: { type: object, additionalProperties: true }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [success, failed] }
+                  result: { type: object, additionalProperties: true }
+                  durationMs: { type: integer }
+
+  /feature-groups/{fgId}/sync:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: syncFeatureGroup
+      summary: 手动刷新最新 Training Config 元数据
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureGroupDetail" }
+
+  /feature-groups/{fgId}/versions:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listFGVersions
+      summary: 列出 FG Version 历史（审计快照）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/FGVersionSnapshot" }
+
+  /feature-groups/{fgId}/versions/{versionId}:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: versionId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getFGVersionDetail
+      summary: 获取指定 Version 快照详情
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FGVersionSnapshot" }
+
+  /feature-groups/{fgId}/features:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listFeatures
+      summary: 列出本 FG 内 Feature 及可用性信息
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Feature" }
+
+  /feature-groups/{fgId}/copy:
+    parameters:
+      - name: fgId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: copyFeatureGroup
+      summary: 复制 FG 为新 Feature Group（弹窗仅 Basic Info）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FGBasicInfoCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeatureGroupDetail" }
+
+components:
+  schemas:
+    FeatureGroupSummary:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        region: { type: string }
+        bizTeam: { type: string }
+        module: { type: string }
+        owner:
+          type: array
+          items: { type: string }
+        trainingConfigured: { type: boolean }
+        servingConfigured: { type: boolean }
+        createTime: { type: string, format: date-time }
+        updateTime: { type: string, format: date-time }
+        description: { type: string }
+
+    FeatureGroupDetail:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        basicInfo: { $ref: "#/components/schemas/FGBasicInfo" }
+        trainingConfig: { $ref: "#/components/schemas/TrainingConfig" }
+        servingConfig: { $ref: "#/components/schemas/ServingConfig" }
+        features:
+          type: array
+          items: { $ref: "#/components/schemas/Feature" }
+        createTime: { type: string, format: date-time }
+        updateTime: { type: string, format: date-time }
+
+    FGBasicInfo:
+      type: object
+      properties:
+        name: { type: string }
+        module: { type: string }
+        entity:
+          type: array
+          items: { type: string }
+        latency: { type: string }
+        region: { type: string }
+        bizTeam: { type: string }
+        owner:
+          type: array
+          items: { type: string }
+        description: { type: string }
+
+    FGBasicInfoCreate:
+      type: object
+      required: [name, module, entity, region, bizTeam, owner]
+      properties:
+        name: { type: string }
+        module: { type: string }
+        entity:
+          type: array
+          items: { type: string }
+        latency: { type: string }
+        region: { type: string }
+        bizTeam: { type: string }
+        owner:
+          type: array
+          items: { type: string }
+        description: { type: string }
+
+    FGBasicInfoUpdate:
+      type: object
+      properties:
+        module: { type: string }
+        entity:
+          type: array
+          items: { type: string }
+        latency: { type: string }
+        bizTeam: { type: string }
+        owner:
+          type: array
+          items: { type: string }
+        description: { type: string }
+
+    TrainingConfig:
+      type: object
+      properties:
+        dataServer: { type: string }
+        tableSchema: { type: string }
+        tableName: { type: string }
+        entitiesColumns:
+          type: array
+          items: { type: string }
+        datePartitionColumn: { type: string }
+        customFilter: { type: string }
+        updateFrequency:
+          type: string
+          enum: [Daily, Weekly, Monthly]
+
+    ServingConfig:
+      type: object
+      description: Serving 工作流可序列化画布模型
+      properties:
+        nodes:
+          type: array
+          items: { $ref: "#/components/schemas/ServingCanvasNode" }
+        edges:
+          type: array
+          items:
+            type: object
+            properties:
+              from: { type: string }
+              to: { type: string }
+        testRunPassed: { type: boolean }
+
+    ServingCanvasNode:
+      type: object
+      properties:
+        id: { type: string }
+        kind:
+          type: string
+          enum: [start, feature_source, transformation, end]
+        title: { type: string }
+        config: { type: object, additionalProperties: true }
+        x: { type: number }
+        y: { type: number }
+
+    Feature:
+      type: object
+      properties:
+        name: { type: string }
+        dataType: { type: string }
+        trainingAvailability: { type: boolean }
+        servingAvailability: { type: boolean }
+        source:
+          type: string
+          enum: [MAPPED, CUSTOM]
+          description: MAPPED = 与离线列映射一致；CUSTOM = 仅 Serving
+        offlineColumnName:
+          type: string
+          description: 映射特征的离线列名（CUSTOM 时为 null）
+        partition: { type: string }
+
+    FGVersionSnapshot:
+      type: object
+      properties:
+        versionId: { type: string }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        createdBy: { type: string }
+        publishedAt: { type: string, format: date-time }
+        basicInfo: { $ref: "#/components/schemas/FGBasicInfo" }
+        trainingConfig: { $ref: "#/components/schemas/TrainingConfig" }
+        servingConfig: { $ref: "#/components/schemas/ServingConfig" }
+
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object }

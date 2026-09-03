@@ -1,0 +1,567 @@
+openapi: 3.1.0
+info:
+  title: Feature WideTable API
+  version: 1.0.0-mvp
+  description: |
+    Feature WideTable 的 CRUD、Canvas 配置、Instance 管理及 Trigger/Kill。
+    与架构说明 §5、《产品原型图》§3.5 对齐。
+
+servers:
+  - url: /api/v1
+
+paths:
+  /wide-tables:
+    get:
+      operationId: listWideTables
+      summary: 分页查询 WideTable（含嵌套 Instance）
+      parameters:
+        - name: name
+          in: query
+          schema: { type: string }
+        - name: region
+          in: query
+          schema: { type: string }
+        - name: owner
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/WideTableWithInstances" }
+
+    post:
+      operationId: createWideTable
+      summary: 新建 WideTable 及初始 Instance V1（DRAFT）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WideTableCreate" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WideTableWithInstances" }
+
+  /wide-tables/{wtId}:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getWideTable
+      summary: 获取 WideTable 详情及全部 Instance
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WideTableWithInstances" }
+    put:
+      operationId: updateWideTable
+      summary: 更新 WideTable 元信息（Owner、Biz Team、Description；Name 与 Region 只读）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WideTableUpdate" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WideTable" }
+    delete:
+      operationId: deleteWideTable
+      summary: 删除整个 WideTable（前端 PopConfirm）
+      responses:
+        "204":
+          description: 已删除
+
+  /wide-tables/{wtId}/instances:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: addInstance
+      summary: 新增 Instance Version（自增，状态 DRAFT）
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description: { type: string }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Instance" }
+
+  /wide-tables/{wtId}/instances/{instanceId}:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getInstance
+      summary: 获取 Instance 详情
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Instance" }
+
+  /wide-tables/{wtId}/instances/{instanceId}/copy:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: copyInstance
+      summary: 复制 Instance 为新 Version（自增、DRAFT，复制画布配置）
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description: { type: string }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Instance" }
+
+  /wide-tables/{wtId}/instances/{instanceId}/canvas:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getCanvasConfig
+      summary: 获取该 Instance 的 Canvas DAG 配置
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CanvasConfig" }
+    put:
+      operationId: saveCanvasConfig
+      summary: 保存 Canvas DAG 配置（Save 按钮）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CanvasConfig" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CanvasConfig" }
+
+  /wide-tables/{wtId}/instances/{instanceId}/check:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: checkInstance
+      summary: 校验画布配置（Check 按钮）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid: { type: boolean }
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        nodeId: { type: string }
+                        field: { type: string }
+                        message: { type: string }
+
+  /wide-tables/{wtId}/instances/{instanceId}/submit:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: submitInstance
+      summary: 提交 Instance（DRAFT -> READY；需 Check 已通过）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Instance" }
+        "409":
+          description: Check 未通过或状态非法
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /wide-tables/{wtId}/instances/{instanceId}/trigger:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: triggerInstance
+      summary: 触发执行（READY/SUCCESS/FAILED -> RUNNING）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Instance" }
+        "409":
+          description: Instance 不可触发
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /wide-tables/{wtId}/instances/{instanceId}/kill:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: killInstance
+      summary: 终止运行中 Instance（RUNNING -> KILLED）
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Instance" }
+        "409":
+          description: Instance 非 RUNNING
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /wide-tables/{wtId}/instances/{instanceId}/report:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getDataReport
+      summary: 获取 Data Report（Raw 或 Clean）
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema: { type: string, enum: [raw, clean] }
+        - name: search
+          in: query
+          schema: { type: string }
+          description: 按列名筛选
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  columns:
+                    type: array
+                    items: { $ref: "#/components/schemas/ReportColumn" }
+
+  /wide-tables/{wtId}/instances/{instanceId}/report/export:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: exportDataReport
+      summary: 导出 Data Report 为 CSV
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema: { type: string, enum: [raw, clean] }
+      responses:
+        "200":
+          description: CSV 文件下载
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /wide-tables/{wtId}/instances/{instanceId}/execute-config:
+    parameters:
+      - name: wtId
+        in: path
+        required: true
+        schema: { type: string }
+      - name: instanceId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getExecuteConfig
+      summary: 获取该 Instance 的 Execute Config
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecuteConfig" }
+    put:
+      operationId: updateExecuteConfig
+      summary: 更新 Execute Config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExecuteConfig" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecuteConfig" }
+
+components:
+  schemas:
+    InstanceStatus:
+      type: string
+      enum: [DRAFT, READY, RUNNING, SUCCESS, FAILED, KILLED]
+
+    WideTable:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        region: { type: string }
+        owner:
+          type: array
+          items: { type: string }
+        bizTeam: { type: string }
+        description: { type: string }
+        updateTime: { type: string, format: date-time }
+
+    WideTableCreate:
+      type: object
+      required: [name, region, owner, bizTeam]
+      properties:
+        name: { type: string }
+        region: { type: string }
+        owner:
+          type: array
+          items: { type: string }
+        bizTeam: { type: string }
+        description: { type: string }
+
+    WideTableUpdate:
+      type: object
+      properties:
+        owner:
+          type: array
+          items: { type: string }
+        bizTeam: { type: string }
+        description: { type: string }
+
+    Instance:
+      type: object
+      properties:
+        id: { type: string }
+        wideTableId: { type: string }
+        version: { type: integer }
+        status: { $ref: "#/components/schemas/InstanceStatus" }
+        creator: { type: string }
+        createTime: { type: string, format: date-time }
+        startTime: { type: string, format: date-time }
+        endTime: { type: string, format: date-time }
+        rowsCnt: { type: integer }
+        columnsCnt: { type: integer }
+        resultTable: { type: string }
+        description: { type: string }
+
+    WideTableWithInstances:
+      allOf:
+        - $ref: "#/components/schemas/WideTable"
+        - type: object
+          properties:
+            instances:
+              type: array
+              items: { $ref: "#/components/schemas/Instance" }
+
+    CanvasConfig:
+      type: object
+      description: WideTable 画布可序列化 DAG
+      properties:
+        frameTable: { $ref: "#/components/schemas/FrameTableNode" }
+        featureGroups:
+          type: array
+          items: { $ref: "#/components/schemas/FGCanvasNode" }
+        dataIngestion: { $ref: "#/components/schemas/DataIngestionNode" }
+        dataCleaning: { $ref: "#/components/schemas/DataCleaningNode" }
+
+    FrameTableNode:
+      type: object
+      properties:
+        dataServer: { type: string }
+        tableSchema: { type: string }
+        tableName: { type: string }
+        primaryKeyColumns:
+          type: array
+          items: { type: string }
+        eventTimeColumn: { type: string }
+        columns:
+          type: array
+          items: { type: string }
+        customFilter: { type: string }
+
+    FGCanvasNode:
+      type: object
+      properties:
+        nodeId: { type: string }
+        featureGroupId: { type: string }
+        featureGroupName: { type: string }
+        primaryKeyColumn: { type: string }
+        eventTimeColumn: { type: string }
+        columns:
+          type: array
+          items: { type: string }
+        joinType:
+          type: string
+          enum: [LeftLatestJoin, InnerLatestJoin]
+        joinConditions:
+          type: array
+          items:
+            type: object
+            properties:
+              frameTableColumn: { type: string }
+              operator: { type: string }
+              fgColumn: { type: string }
+
+    DataIngestionNode:
+      type: object
+      properties:
+        rawDataResult: { type: string }
+        datePartition: { type: string }
+        rawDataReport: { type: string }
+
+    DataCleaningNode:
+      type: object
+      properties:
+        enabled: { type: boolean, default: false }
+        fillnaRules:
+          type: array
+          items:
+            type: object
+            properties:
+              method: { type: string }
+              features:
+                type: array
+                items: { type: string }
+        valueMappingRules:
+          type: array
+          items:
+            type: object
+            properties:
+              featureName: { type: string }
+              sql: { type: string }
+        cleanDataResult: { type: string }
+        cleanDataReport: { type: string }
+
+    ExecuteConfig:
+      type: object
+      properties:
+        resource:
+          type: string
+          enum: [Normal, High]
+          default: Normal
+        queuePriority:
+          type: string
+          enum: [Low, Medium, High]
+          default: Low
+        scheduler:
+          type: string
+          enum: [ONCE, Cron]
+          default: ONCE
+        cronExpression:
+          type: string
+          description: scheduler 为 Cron 时必填
+
+    ReportColumn:
+      type: object
+      properties:
+        columnName: { type: string }
+        cnt: { type: integer }
+        cntUniq: { type: integer }
+        max: { type: number }
+        min: { type: number }
+        avg: { type: number }
+        zeroCnt: { type: integer }
+        nullCnt: { type: integer }
+        negCnt: { type: integer }
+
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object }
