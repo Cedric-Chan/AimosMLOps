@@ -22,6 +22,7 @@ const FS_APP = 'apps/feature-store/index.html';
 const ME_APP = 'apps/model-experiment/index.html';
 const USER_APP = 'apps/user-mgmt/index.html';
 const AG_APP = 'apps/alert-group/index.html';
+const ARCH_APP = 'apps/architecture/index.html';
 
 const NAV = [
   {
@@ -102,10 +103,9 @@ const NAV = [
         notes: ['真实平台 Feature Store 导航项，原型暂缺独立页面', '现有标签数据目录见原型 tagCatalog'],
         doc: `${GITHUB_BASE}/docs/feature-store/architecture/在线特征平台架构说明.md` },
       { id: 'wide-table', label: 'Wide Table', type: 'iframe', app: FS_APP, route: '#/wt' },
-      // Architecture 入口固定在左下角页脚（hidden 不进导航）；原 /arch 原型资产已下线，待填充新内容
-      { id: 'architecture', label: 'Architecture', hidden: true, type: 'placeholder',
-        desc: '平台架构内容占位：原 Feature Store 架构图资产已下线，新的架构与数据流内容将在此填充。',
-        notes: ['入口固定在页面左下角页脚', '待填充：新架构图、数据流说明'] },
+      // Architecture 入口固定在左下角页脚（hidden 不进导航）；archify 生成的平台架构图册
+      { id: 'architecture', label: 'Architecture', hidden: true, type: 'iframe', app: ARCH_APP,
+        desc: '平台架构图册（archify 生成）：架构总览 + 端到端数据流 + 说明与待确认事项。' },
     ],
   },
   {
