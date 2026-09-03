@@ -14,6 +14,8 @@ Aimos 是 Monee 通用风控模型平台：覆盖 **模型训练 + 模型部署 
 
 ## 2. 端到端数据流
 
+> 交互版架构图（archify 生成，嵌入交互 Demo 左下角 Architecture 入口）：**平台架构总览** 与 **端到端数据流** 两张，规格源与维护约定见 [architecture-diagrams.md](architecture-diagrams.md)。
+
 ```
  DS GitLab（算法工程仓）
    │  实验代码 / 配置
@@ -53,6 +55,7 @@ Aimos 是 Monee 通用风控模型平台：覆盖 **模型训练 + 模型部署 
 
 | 领域 | 文档 |
 |------|------|
+| 平台架构交互图册（archify 图 + Pending 确认事项） | [platform/architecture-diagrams.md](architecture-diagrams.md)（源规格 `platform/diagrams/`） |
 | Feature Store 五层架构、离在线一致性、宽表 | [feature-store/architecture/在线特征平台架构说明.md](../feature-store/architecture/在线特征平台架构说明.md) |
 | Feature Store PRD / 交付示意 | [feature-store/design/prd/产品与交付示意图.md](../feature-store/design/prd/产品与交付示意图.md) |
 | Feature Store OpenAPI | [feature-store/api/](../feature-store/api/)（feature-group / feature-map / feature-source / transformation / widetable） |

@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Aimos 端到端数据流",
+    "locale": "zh-CN",
+    "output": "apps/architecture/platform-dataflow.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1400,
+      700
+    ],
+    "views": [
+      {
+        "id": "model-delivery",
+        "label": "模型交付流",
+        "focus": [
+          "gitlab",
+          "mlflow",
+          "exp",
+          "ray",
+          "s3",
+          "build",
+          "deploy",
+          "runtime",
+          "biz"
+        ],
+        "note": "从实验代码到业务系统拿到推理结果的主数据流"
+      },
+      {
+        "id": "feature-offline",
+        "label": "特征训练流",
+        "focus": [
+          "hive-ods",
+          "fs",
+          "exp"
+        ],
+        "note": "离线数据经特征平台组装为训练集"
+      },
+      {
+        "id": "feature-online",
+        "label": "特征在线流",
+        "focus": [
+          "kafka",
+          "hbase",
+          "fs",
+          "runtime"
+        ],
+        "note": "准实时流入在线存储，经 FG Serving 供给推理"
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "数据与代码源"
+    },
+    {
+      "label": "特征生产"
+    },
+    {
+      "label": "模型训练"
+    },
+    {
+      "label": "注册与交付"
+    },
+    {
+      "label": "在线服务"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "gitlab",
+      "type": "external",
+      "label": "DS GitLab",
+      "stage": 0,
+      "row": 0
+    },
+    {
+      "id": "hive-ods",
+      "type": "database",
+      "label": "Hive ODS",
+      "stage": 0,
+      "row": 1
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "stage": 0,
+      "row": 2
+    },
+    {
+      "id": "mlflow",
+      "type": "cloud",
+      "label": "MLflow",
+      "stage": 1,
+      "row": 0
+    },
+    {
+      "id": "fs",
+      "type": "backend",
+      "label": "Feature Store",
+      "stage": 1,
+      "row": 1,
+      "tag": "离在线一致性"
+    },
+    {
+      "id": "hbase",
+      "type": "database",
+      "label": "HBase / Redis",
+      "stage": 1,
+      "row": 2
+    },
+    {
+      "id": "exp",
+      "type": "backend",
+      "label": "Model Experiment",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "ray",
+      "type": "cloud",
+      "label": "Ray 集群",
+      "stage": 2,
+      "row": 1
+    },
+    {
+      "id": "s3",
+      "type": "cloud",
+      "label": "S3",
+      "stage": 2,
+      "row": 2
+    },
+    {
+      "id": "build",
+      "type": "backend",
+      "label": "Model Mgmt",
+      "stage": 3,
+      "row": 0
+    },
+    {
+      "id": "deploy",
+      "type": "backend",
+      "label": "Model Deployment",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "Online Runtime",
+      "stage": 4,
+      "row": 1
+    },
+    {
+      "id": "biz",
+      "type": "external",
+      "label": "业务系统",
+      "stage": 4,
+      "row": 0
+    }
+  ],
+  "flows": [
+    {
+      "id": "gitlab-mlflow",
+      "from": "gitlab",
+      "to": "mlflow",
+      "label": "实验代码 / 配置",
+      "classification": "代码资产",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ods-fs",
+      "from": "hive-ods",
+      "to": "fs",
+      "label": "T+1 同步",
+      "classification": "元数据同步",
+      "variant": "dashed"
+    },
+    {
+      "id": "kafka-hbase",
+      "from": "kafka",
+      "to": "hbase",
+      "label": "上游 Flink 写入",
+      "classification": "数据准备（平台外）",
+      "variant": "dashed"
+    },
+    {
+      "id": "hbase-fs",
+      "from": "hbase",
+      "to": "fs",
+      "label": "FS 取数",
+      "classification": "Raw Feature",
+      "labelDy": -16
+    },
+    {
+      "id": "mlflow-exp",
+      "from": "mlflow",
+      "to": "exp",
+      "label": "Exp / Run 映射",
+      "classification": "实验元数据",
+      "variant": "emphasis",
+      "via": [
+        [
+          422,
+          157
+        ]
+      ],
+      "labelAt": [
+        422,
+        134
+      ]
+    },
+    {
+      "id": "fs-exp",
+      "from": "fs",
+      "to": "exp",
+      "label": "WideTable · PIT Join",
+      "classification": "训练数据"
+    },
+    {
+      "id": "exp-ray",
+      "from": "exp",
+      "to": "ray",
+      "label": "分布式执行",
+      "classification": "任务下发",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "ray-s3",
+      "from": "ray",
+      "to": "s3",
+      "label": "产物落盘",
+      "classification": "Artifact",
+      "labelDy": 24
+    },
+    {
+      "id": "exp-build",
+      "from": "exp",
+      "to": "build",
+      "label": "注册 Build",
+      "classification": "模型资产",
+      "variant": "emphasis"
+    },
+    {
+      "id": "build-deploy",
+      "from": "build",
+      "to": "deploy",
+      "label": "发布 Build",
+      "classification": "上线交付",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "deploy-runtime",
+      "from": "deploy",
+      "to": "runtime",
+      "label": "部署在线推理服务",
+      "classification": "服务发布",
+      "variant": "emphasis"
+    },
+    {
+      "id": "fs-runtime",
+      "from": "fs",
+      "to": "runtime",
+      "label": "FG Serving · 在线特征",
+      "classification": "Fine Feature",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [
+        [
+          434,
+          271
+        ],
+        [
+          434,
+          460
+        ],
+        [
+          960,
+          460
+        ]
+      ],
+      "labelAt": [
+        700,
+        445
+      ]
+    },
+    {
+      "id": "runtime-biz",
+      "from": "runtime",
+      "to": "biz",
+      "label": "推理结果",
+      "classification": "推理输出",
+      "variant": "emphasis",
+      "labelDy": -14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "模型交付主链",
+      "items": [
+        "DS GitLab 实验代码经 MLflow 进入 Model Experiment，Run 在 Ray 集群分布式执行",
+        "产物 / 指标 / 日志统一落 S3，Run SUCCESS 后注册 Build 并发布为在线推理服务"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "特征离在线双流",
+      "items": [
+        "离线流：Hive ODS 元数据 T+1 同步为 DataSource，经 FS→TF→FG 组装，WideTable 以 Point-in-Time Join 产出训练集",
+        "在线流：Kafka 经上游 Flink 写入 HBase / Redis，FeatureSource 取数后由 FG 层映射为一致口径的在线特征"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "平台边界",
+      "items": [
+        "上游数据准备（Flink 写 HBase、Hive 入湖）不属本平台",
+        "训练数据为有权限的任意 Hive 表（含 WideTable 产物），与特征平台松耦合"
+      ]
+    }
+  ]
+}
