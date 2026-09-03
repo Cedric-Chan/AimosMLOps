@@ -159,9 +159,19 @@ function renderNav() {
 
     const header = document.createElement('button');
     header.className = 'module-header';
+    header.title = mod.label;
     header.innerHTML =
       `<span class="icon">${mod.icon}</span><span>${mod.label}</span><span class="chevron">${ICONS.chevron}</span>`;
-    header.addEventListener('click', () => modEl.classList.toggle('collapsed'));
+    header.addEventListener('click', () => {
+      if (document.getElementById('sidebar').classList.contains('collapsed')) {
+        // 收起态点模块图标：展开侧边栏并打开该模块分组
+        document.getElementById('sidebar').classList.remove('collapsed');
+        modEl.classList.remove('collapsed');
+        syncToggle();
+      } else {
+        modEl.classList.toggle('collapsed');
+      }
+    });
     modEl.appendChild(header);
 
     const itemsEl = document.createElement('div');
@@ -189,11 +199,10 @@ function highlight(key) {
   navEl.querySelectorAll('.nav-item').forEach((el) => {
     el.classList.toggle('active', el.dataset.key === key);
   });
-  // 独立顶级模块（无子项文案差异）时高亮其模块头
+  // 当前所在模块的标题/图标高亮（对齐真实平台：默认深灰，激活 teal）
   navEl.querySelectorAll('.module').forEach((el) => {
-    const standalone = el.classList.contains('module-standalone');
-    const owns = key && key.startsWith(el.dataset.module + '/');
-    el.querySelector('.module-header').classList.toggle('active-header', standalone && !!owns);
+    const owns = !!key && key.startsWith(el.dataset.module + '/');
+    el.querySelector('.module-header').classList.toggle('active-header', owns);
   });
 }
 
@@ -247,5 +256,22 @@ function navigate() {
 }
 
 renderNav();
+
+/* ---------- 侧边栏收起 / 展开 ---------- */
+
+const sidebarEl = document.getElementById('sidebar');
+const toggleBtn = document.getElementById('sidebar-toggle');
+
+function syncToggle() {
+  const collapsed = sidebarEl.classList.contains('collapsed');
+  toggleBtn.title = collapsed ? '展开导航' : '收起导航';
+  toggleBtn.setAttribute('aria-label', toggleBtn.title);
+}
+
+toggleBtn.addEventListener('click', () => {
+  sidebarEl.classList.toggle('collapsed');
+  syncToggle();
+});
+
 window.addEventListener('hashchange', navigate);
 navigate();
