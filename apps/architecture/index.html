@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aimos 平台架构图册</title>
+  <style>
+    /* 平台壳内的架构图册页：Tab 切换 三张视图（架构总览 / 端到端数据流 / 说明与待确认） */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal: #0fbfbf;
+      --teal-dark: #0aa2a2;
+      --text: #333;
+      --text-sub: #666;
+      --text-faint: #999;
+      --border: #e8e8e8;
+      --bg: #fff;
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      font-size: 14px;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .arch-header {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .arch-title { font-size: 15px; font-weight: 600; white-space: nowrap; }
+    .arch-title .crumb { color: var(--text-faint); font-weight: 400; margin-right: 8px; }
+
+    .tabs { display: flex; gap: 4px; }
+    .tab {
+      border: none;
+      background: none;
+      font: inherit;
+      color: var(--text-sub);
+      padding: 7px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tab:hover { background: rgba(0, 0, 0, 0.045); color: var(--text); }
+    .tab.active { background: rgba(15, 191, 191, 0.12); color: var(--teal-dark); font-weight: 600; }
+
+    .arch-meta { margin-left: auto; color: var(--text-faint); font-size: 12px; white-space: nowrap; }
+    .arch-meta a { color: var(--teal-dark); text-decoration: none; margin-left: 10px; }
+    .arch-meta a:hover { text-decoration: underline; }
+
+    .panes { flex: 1; min-height: 0; position: relative; }
+    .pane { position: absolute; inset: 0; display: none; }
+    .pane.active { display: block; }
+    .pane iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+    /* 说明与待确认 */
+    .notes { overflow-y: auto; padding: 26px 32px 60px; }
+    .notes-inner { max-width: 860px; margin: 0 auto; }
+    .notes h1 { font-size: 20px; margin-bottom: 6px; }
+    .notes .lead { color: var(--text-sub); margin-bottom: 22px; line-height: 1.7; }
+    .notes h2 {
+      font-size: 14px;
+      margin: 26px 0 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .notes ul { padding-left: 20px; line-height: 1.9; color: var(--text-sub); }
+    .notes li b { color: var(--text); font-weight: 600; }
+    .notes code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.045);
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+    .chip {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--teal-dark);
+      background: rgba(15, 191, 191, 0.12);
+      border-radius: 4px;
+      padding: 2px 8px;
+      margin-left: 8px;
+      vertical-align: 2px;
+    }
+    .warn-chip {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #d46b08;
+      background: #fff7e6;
+      border: 1px solid #ffd591;
+      border-radius: 4px;
+      padding: 1px 8px;
+      margin-left: 8px;
+      vertical-align: 2px;
+    }
+    .footer-note { margin-top: 34px; color: var(--text-faint); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="arch-header">
+    <div class="arch-title"><span class="crumb">Aimos Platform /</span>Architecture</div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-pane="overview">架构总览</button>
+      <button class="tab" data-pane="dataflow">端到端数据流</button>
+      <button class="tab" data-pane="fsarch">FS 架构</button>
+      <button class="tab" data-pane="fsflow">FS 数据流</button>
+      <button class="tab" data-pane="notes">说明与口径</button>
+    </div>
+    <div class="arch-meta">
+      <a href="platform-architecture.html" target="_blank" rel="noopener">总览 ↗</a>
+      <a href="platform-dataflow.html" target="_blank" rel="noopener">数据流 ↗</a>
+      <a href="featurestore-architecture.html" target="_blank" rel="noopener">FS 架构 ↗</a>
+      · archify 生成 · 源 <a href="https://github.com/Cedric-Chan/AimosMLOps/tree/main/docs/platform/diagrams" target="_blank" rel="noopener">docs/platform/diagrams</a>
+    </div>
+  </div>
+
+  <div class="panes">
+    <div class="pane active" data-pane="overview">
+      <iframe src="platform-architecture.html?theme=light" title="Aimos 平台架构总览"></iframe>
+    </div>
+    <div class="pane" data-pane="dataflow">
+      <iframe src="platform-dataflow.html?theme=light" title="Aimos 端到端数据流"></iframe>
+    </div>
+    <div class="pane" data-pane="fsarch">
+      <iframe src="featurestore-architecture.html?theme=light" title="Feature Store 系统架构"></iframe>
+    </div>
+    <div class="pane" data-pane="fsflow">
+      <iframe src="featurestore-dataflow.html?theme=light" title="Feature Store 数据流"></iframe>
+    </div>
+    <div class="pane" data-pane="notes">
+      <div class="notes"><div class="notes-inner">
+        <h1>平台架构图册<span class="chip">archify 2.17</span></h1>
+        <p class="lead">
+          本图册由 <a href="https://github.com/tt-a1i/archify" target="_blank" rel="noopener">archify</a> 从平台文档梳理生成，共四张交互图：
+          <b>架构总览</b>与<b>端到端数据流</b>为平台级视图，<b>FS 架构</b>与<b>FS 数据流</b>为 Feature Store 模块视图（自 archify 2.6.0 旧图迁移重绘）。
+          图内支持主题切换、缩放、搜索（/）、角色视角（L）与导图（M）。规格源与完整说明见
+          <a href="https://github.com/Cedric-Chan/AimosMLOps/tree/main/docs/platform/diagrams" target="_blank" rel="noopener">docs/platform/diagrams</a>。
+        </p>
+
+        <h2>图纸与来源</h2>
+        <ul>
+          <li><b>架构总览</b> — <code>aimos-platform.architecture.json</code>，依据 <code>docs/platform/architecture.md</code> 模块分层与端到端关系。</li>
+          <li><b>端到端数据流</b> — <code>aimos-platform.dataflow.json</code>，覆盖数据与代码源 → 特征生产 → 模型训练 → 注册交付 → 在线服务五阶段。</li>
+          <li><b>FS 架构 / FS 数据流</b> — <code>featurestore.architecture.json</code>、<code>featurestore.dataflow.json</code>，依据《在线特征平台架构说明》五层架构、§8.1 资产流转与离在线双流；替代已删除的旧 <code>public/architecture</code> 资产。</li>
+        </ul>
+
+        <h2>口径确认<span class="chip">已确认 · 2026-09</span></h2>
+        <ul>
+          <li><b>训练数据物理路径</b>：训练数据为有权限的任意 Hive 表（含 WideTable 产物）；<b>Experiment 首个节点 Datasource 负责 Hive → S3 装载</b>，Ray 集群经 Ray Dataset 从 S3 读取执行（图：ray→s3 边标注 Datasource 装载 / 产物）。</li>
+          <li><b>AI Hub → Online Runtime</b>：LLM / Skill / KB 资产供给在线服务的链路<b>确认成立</b>（架构总览对应边）。</li>
+          <li><b>FeatureMap</b>：已入图——平台数据流的特征生产阶段（FG 发布自动同步）+ FS 两图（FG → FeatureMap 检索出口，<b>最细特征粒度</b>检索与 Feature Cart）。</li>
+          <li><b>旧 Feature Store 架构图</b>：archify 2.6.0 旧资产经 visual-check 验证不满足视口标准，已按当前文档用 2.17 重绘迁入本图册，旧文件与 FS 应用 <code>#/arch</code> 路由一并移除。</li>
+          <li><b>Console / Background Task</b>：维持现状——折叠为 Web Console 副标签；Background Task 为临时后台任务位，暂不细化。</li>
+        </ul>
+
+        <div class="footer-note">Aimos MLOps 平台交互 Demo · 架构内容由 docs/platform/ 文档驱动，重新生成命令见仓库 docs/platform/architecture-diagrams.md</div>
+      </div></div>
+    </div>
+  </div>
+
+  <script>
+    // hash 路由：#overview / #dataflow / #fsarch / #fsflow / #notes，刷新后保持当前页签
+    const tabs = document.querySelectorAll('.tab');
+    const panes = document.querySelectorAll('.pane');
+
+    function activate(name) {
+      const valid = ['overview', 'dataflow', 'fsarch', 'fsflow', 'notes'].includes(name) ? name : 'overview';
+      tabs.forEach((t) => t.classList.toggle('active', t.dataset.pane === valid));
+      panes.forEach((p) => p.classList.toggle('active', p.dataset.pane === valid));
+    }
+
+    tabs.forEach((t) => t.addEventListener('click', () => { location.hash = '#' + t.dataset.pane; }));
+    window.addEventListener('hashchange', () => activate((location.hash || '').replace(/^#/, '')));
+    activate((location.hash || '').replace(/^#/, ''));
+  </script>
+</body>
+</html>
