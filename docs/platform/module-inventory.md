@@ -25,7 +25,7 @@
 | 子模块 | 状态 | 说明 | 待设计事项 |
 |--------|------|------|-----------|
 | MLFlow | 🟡 | 连接 DS GitLab 与 Aimos 平台的桥梁（实验产物同步） | 集成架构已定（见 mlflow-integration.md），管理页 UI 待设计 |
-| Model Mgmt | 🟡 | 模型逻辑容器列表（Model → ModelVersion → Build） | 列表 / 详情 / 版本与 Build 管理 UI；领域模型见 GLOSSARY.md |
+| Model Mgmt | ✅ | 模型逻辑实体管理（Name+Version 唯一；状态驱动 Action：Deployed→View/Edit/Build/Deprecate，Deprecate→View；View=Build 部署明细页）。原型 `apps/model-mgmt/`，规格见 [model-mgmt/spec.md](../model-mgmt/spec.md) | 新模型初始态、Owner→Biz Team 真实来源、Deprecate 前置校验待定 |
 | Model Experiment | ✅ | 原「Model Train」改名；训练任务全生命周期：任务配置 → 调度执行 → Pipeline → 评估 → 归档 → 注册。原型来自 ModelExperiment 仓库 | 原型已对齐 GitPages PRD；持续迭代中 |
 | Model Deployment | 🟡 | 部署训练产物（Build）为在线推理服务 | 部署表单、实例列表、发布与回滚 |
 
