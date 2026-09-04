@@ -136,8 +136,10 @@ const NAV = [
 /* ---------- 渲染与路由 ---------- */
 
 const navEl = document.getElementById('nav');
-const contentEl = document.getElementById('content');
+const contentBody = document.getElementById('content-body');
+const openStandaloneBtn = document.getElementById('open-standalone');
 let currentKey = null;
+let currentIframeItem = null;
 
 function findItem(key) {
   const [moduleId, itemId] = (key || '').split('/');
@@ -207,9 +209,11 @@ function highlight(key) {
 }
 
 function showPlaceholder(mod, item) {
+  currentIframeItem = null;
+  openStandaloneBtn.hidden = true;
   const chipClass = item.badge === 'Future' ? 'future' : 'placeholder';
   const chipText = item.badge === 'Future' ? 'Future · 预留' : 'Placeholder · 待设计';
-  contentEl.innerHTML = `
+  contentBody.innerHTML = `
     <div class="placeholder-wrap">
       <div class="placeholder-card">
         <div class="crumb">${mod.label} / ${item.label}</div>
@@ -223,9 +227,12 @@ function showPlaceholder(mod, item) {
 }
 
 function showIframe(mod, item) {
+  currentIframeItem = item;
+  openStandaloneBtn.hidden = false;
+  openStandaloneBtn.title = `在新窗口打开 ${item.label} 原型（用于元素选取）`;
   const src = item.app + (item.route || '');
-  contentEl.innerHTML = `<iframe id="proto" src="${src}"></iframe>`;
-  const iframe = contentEl.querySelector('iframe');
+  contentBody.innerHTML = `<iframe id="proto" src="${src}"></iframe>`;
+  const iframe = contentBody.querySelector('iframe');
   iframe.addEventListener('load', () => {
     // 同源注入：隐藏原型应用自带的侧边栏，保持与真实平台一致的单一导航
     try {
@@ -236,6 +243,14 @@ function showIframe(mod, item) {
         doc.head.appendChild(style);
       }
     } catch (e) { /* 跨域时忽略 */ }
+  });
+}
+
+/* ---------- 模块手风琴：导航后只展开当前模块，其余折叠 ---------- */
+
+function syncModuleGroups(activeModuleId) {
+  navEl.querySelectorAll('.module').forEach((el) => {
+    el.classList.toggle('collapsed', el.dataset.module !== activeModuleId);
   });
 }
 
@@ -253,9 +268,23 @@ function navigate() {
     document.title = `${item.label} · Aimos Platform`;
   }
   highlight(fullKey);
+  syncModuleGroups(mod.id);
 }
 
 renderNav();
+
+/* ---------- 右下角：新窗口打开原型（元素选取用） ---------- */
+
+openStandaloneBtn.addEventListener('click', () => {
+  if (!currentIframeItem) return;
+  let url = currentIframeItem.app + (currentIframeItem.route || '');
+  try {
+    // 跟随 iframe 内部的实时路由（如 FG 详情 /fg/1），保证新窗口落在同一页面
+    const innerHash = document.querySelector('iframe')?.contentWindow?.location.hash;
+    if (innerHash) url = currentIframeItem.app + innerHash;
+  } catch (e) { /* 跨域时忽略 */ }
+  window.open(url, '_blank', 'noopener');
+});
 
 /* ---------- 侧边栏收起 / 展开 ---------- */
 
