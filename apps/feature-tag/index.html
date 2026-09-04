@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feature Tag · Aimos</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="page">
+
+    <!-- 筛选栏 -->
+    <div class="card filter-bar">
+      <div class="filter-item">
+        <label>Category：</label>
+        <input id="f-category" type="text" placeholder="Please enter">
+      </div>
+      <div class="filter-item">
+        <label>Feature Tag：</label>
+        <input id="f-tag" type="text" placeholder="Please enter">
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-default" id="btn-reset">Reset</button>
+        <button class="btn btn-primary" id="btn-query">Query</button>
+      </div>
+    </div>
+
+    <!-- 列表卡片 -->
+    <div class="card">
+      <div class="toolbar">
+        <button class="btn btn-primary" id="btn-category-dir">Category Dir</button>
+        <button class="btn btn-primary" id="btn-add">Add Tag</button>
+        <div class="toolbar-icons">
+          <button class="icon-btn" id="btn-refresh" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-info" title="二级结构说明">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-settings" title="预留">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+
+        <!-- Category Dir 浮窗 -->
+        <div id="category-dir-panel" class="category-dir-panel hidden">
+          <div id="category-tags" class="category-tags"></div>
+          <div class="category-dir-footer">
+            <button class="btn btn-default" id="btn-category-close">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <table class="ft-table">
+        <thead>
+          <tr>
+            <th style="width:22%">Category</th>
+            <th style="width:22%">Feature Tag</th>
+            <th style="width:36%">Description</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+
+      <div class="pagination">
+        <span id="page-total" class="page-total"></span>
+        <div id="page-buttons" class="page-buttons"></div>
+        <select id="page-size">
+          <option value="10" selected>10 / page</option>
+          <option value="20">20 / page</option>
+          <option value="50">50 / page</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit Feature Tag 弹窗 -->
+  <div id="tag-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">
+        <span id="tag-modal-title">Add Feature Tag</span>
+        <button class="modal-close" id="btn-tag-modal-close">×</button>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Category：</label>
+        <select id="m-category"><option value="">Please select Category</option></select>
+        <div class="form-err hidden" id="err-category"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Feature Tag：</label>
+        <div class="input-wrap">
+          <input id="m-tag" type="text" placeholder="Please enter Feature Tag">
+          <button class="input-clear" data-for="m-tag" title="Clear">⊗</button>
+        </div>
+        <div class="form-err hidden" id="err-tag"></div>
+      </div>
+      <div class="form-item">
+        <label>Description：</label>
+        <div class="input-wrap">
+          <textarea id="m-desc" rows="3" placeholder="大文本框"></textarea>
+          <button class="input-clear" data-for="m-desc" title="Clear">⊗</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-tag-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-tag-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认 -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal modal-confirm">
+      <div class="confirm-text" id="confirm-text"></div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-confirm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-confirm-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="app.js"></script>
+</body>
+</html>

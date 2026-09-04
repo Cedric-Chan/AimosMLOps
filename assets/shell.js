@@ -22,6 +22,12 @@ const FS_APP = 'apps/feature-store/index.html';
 const ME_APP = 'apps/model-experiment/index.html';
 const USER_APP = 'apps/user-mgmt/index.html';
 const AG_APP = 'apps/alert-group/index.html';
+const FE_APP = 'apps/feature-entity/index.html';
+const FT_APP = 'apps/feature-tag/index.html';
+
+/* 应用缓存版本号：改动任一原型 app 后递增，强制浏览器刷新 iframe 里的 index.html
+ * （应用的 index.html 被缓存而 assets 哈希已换时会出现空白页面） */
+const APPS_VERSION = '20260904b';
 const ARCH_APP = 'apps/architecture/index.html';
 
 const NAV = [
@@ -94,14 +100,10 @@ const NAV = [
       { id: 'transformation', label: 'Transformation', type: 'iframe', app: FS_APP, route: '#/tf' },
       { id: 'feature-group', label: 'Feature Group', type: 'iframe', app: FS_APP, route: '#/fg' },
       { id: 'feature-map', label: 'Feature Map', type: 'iframe', app: FS_APP, route: '#/fm' },
-      { id: 'entity', label: 'Feature Entity', type: 'placeholder',
-        desc: '特征实体（Entity）管理：特征所挂载的业务主体定义。现有 Feature Store 原型未覆盖独立 Entity 页面，占位待设计。',
-        notes: ['真实平台 Feature Store 导航项，原型暂缺', '概念定义参见特征平台架构说明'],
-        doc: `${GITHUB_BASE}/docs/feature-store/architecture/在线特征平台架构说明.md` },
-      { id: 'feature-tag', label: 'Feature Tag', type: 'placeholder',
-        desc: '特征标签（Feature Tag）管理：标签体系与打标管理。目前标签能力内嵌于 Feature Map 的过滤面板，独立管理页待设计。',
-        notes: ['真实平台 Feature Store 导航项，原型暂缺独立页面', '现有标签数据目录见原型 tagCatalog'],
-        doc: `${GITHUB_BASE}/docs/feature-store/architecture/在线特征平台架构说明.md` },
+      { id: 'entity', label: 'Feature Entity', type: 'iframe', app: FE_APP,
+        desc: '特征实体管理原型：实体 = 唯一实体说明（避免混用和歧义）；当前用于 FG 注册与 Orches Service Start 节点自动补全，未来承载特征实体统一治理。' },
+      { id: 'feature-tag', label: 'Feature Tag', type: 'iframe', app: FT_APP,
+        desc: '特征标签管理原型：二级结构 Category → Feature Tag；Category Dir 浮窗管理一级目录；注册的 Tag 供 Feature Map 打标签与 Tag 检索使用（localStorage 共享注册表）。' },
       { id: 'wide-table', label: 'Wide Table', type: 'iframe', app: FS_APP, route: '#/wt' },
       // Architecture 入口固定在左下角页脚（hidden 不进导航）；archify 生成的平台架构图册
       { id: 'architecture', label: 'Architecture', hidden: true, type: 'iframe', app: ARCH_APP,
@@ -230,7 +232,7 @@ function showIframe(mod, item) {
   currentIframeItem = item;
   openStandaloneBtn.hidden = false;
   openStandaloneBtn.title = `在新窗口打开 ${item.label} 原型（用于元素选取）`;
-  const src = item.app + (item.route || '');
+  const src = item.app + '?v=' + APPS_VERSION + (item.route || '');
   contentBody.innerHTML = `<iframe id="proto" src="${src}"></iframe>`;
   const iframe = contentBody.querySelector('iframe');
   iframe.addEventListener('load', () => {
