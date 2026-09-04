@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Mgmt · Aimos</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+  <!-- ══════════ 列表页 ══════════ -->
+  <div id="page-list">
+    <div class="page">
+
+      <!-- 筛选栏（可折叠） -->
+      <div class="card filter-card">
+        <div class="filter-grid">
+          <div class="filter-item"><label>Model Name：</label><input id="f-name" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>Version：</label><input id="f-version" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>Region：</label>
+            <select id="f-region"><option value="">Please select</option></select>
+          </div>
+          <div class="filter-item"><label>Biz Team：</label>
+            <select id="f-team"><option value="">Please select</option></select>
+          </div>
+          <div class="filter-item" data-extra hidden><label>Product：</label><input id="f-product" type="text" placeholder="Please enter"></div>
+          <div class="filter-item" data-extra hidden><label>Model Status：</label>
+            <select id="f-status"><option value="">Please select</option><option>Deployed</option><option>Deprecate</option></select>
+          </div>
+          <div class="filter-item" data-extra hidden><label>Owner：</label><input id="f-owner" type="text" placeholder="Please enter"></div>
+          <div class="filter-actions">
+            <button class="btn btn-default" id="btn-reset">Reset</button>
+            <button class="btn btn-primary" id="btn-query">Query</button>
+            <button class="link-btn collapse-toggle" id="btn-collapse">Collapse ∧</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 列表卡片 -->
+      <div class="card">
+        <div class="toolbar">
+          <span class="toolbar-spacer"></span>
+          <label class="owned-check"><input type="checkbox" id="owned-me"> Owned by me</label>
+          <button class="btn btn-primary" id="btn-add">Create Model</button>
+          <div class="toolbar-icons">
+            <button class="icon-btn" id="btn-refresh" title="Refresh">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+            </button>
+            <button class="icon-btn" id="btn-info" title="模型逻辑实体说明">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </button>
+            <button class="icon-btn" id="btn-settings" title="预留">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="mm-table">
+            <thead>
+              <tr>
+                <th>Model Name</th><th>Version</th><th>Region</th><th>Biz Team</th>
+                <th>Product</th><th>Model Status</th><th>CreateTime</th><th>UpdateTime</th>
+                <th>Owner</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span id="page-total" class="page-total"></span>
+          <div id="page-buttons" class="page-buttons"></div>
+          <select id="page-size">
+            <option value="10" selected>10 / page</option>
+            <option value="20">20 / page</option>
+            <option value="50">50 / page</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Build Detail 页（View） ══════════ -->
+  <div id="page-detail" hidden>
+    <div class="page">
+      <div class="detail-header">
+        <button class="back-arrow" id="btn-back-top" title="Back">←</button>
+        <span class="detail-title">Model Deployment</span>
+      </div>
+
+      <div class="card detail-section">
+        <h2 class="section-title">Model Info</h2>
+        <div id="detail-model-info" class="kv-grid"></div>
+      </div>
+
+      <div class="card detail-section">
+        <h2 class="section-title">Build Info</h2>
+        <div id="detail-build-info" class="kv-grid"></div>
+      </div>
+
+      <div class="card detail-section">
+        <div class="param-header">
+          <h2 class="section-title">Input Parameter</h2>
+          <button class="link-btn copy-setting" data-copy="input">Copy Setting</button>
+        </div>
+        <div class="param-scroll">
+          <table class="param-table">
+            <thead><tr><th>Input Parameter Name</th><th style="width:140px">Data Type</th></tr></thead>
+            <tbody id="detail-input-params"></tbody>
+          </table>
+        </div>
+        <div class="param-count" id="input-count"></div>
+      </div>
+
+      <div class="card detail-section">
+        <div class="param-header">
+          <h2 class="section-title">Output Parameter</h2>
+          <button class="link-btn copy-setting" data-copy="output">Copy Setting</button>
+        </div>
+        <div class="param-scroll">
+          <table class="param-table">
+            <thead><tr><th>Output Parameter Name</th><th style="width:140px">Data Type</th></tr></thead>
+            <tbody id="detail-output-params"></tbody>
+          </table>
+        </div>
+        <div class="param-count" id="output-count"></div>
+        <div class="detail-footer">
+          <button class="btn btn-default" id="btn-back-bottom">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Create / Edit Model 弹窗 ══════════ -->
+  <div id="model-modal" class="modal-overlay hidden">
+    <div class="modal modal-wide">
+      <div class="modal-title">
+        <span id="model-modal-title">Create Model</span>
+        <button class="modal-close" id="btn-model-close">×</button>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Name：</label>
+        <input id="m-name" type="text" placeholder="please input model name">
+        <div class="form-err hidden" id="err-name"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Version：</label>
+        <input id="m-version" type="text" placeholder="please input model version">
+        <div class="form-err hidden" id="err-version"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Region：</label>
+        <select id="m-region"><option value="">Please select</option></select>
+        <div class="form-err hidden" id="err-region"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Product：</label>
+        <input id="m-product" type="text" placeholder="Please enter product">
+        <div class="form-err hidden" id="err-product"></div>
+      </div>
+      <div class="form-item">
+        <label>Owner：</label>
+        <div class="owner-box" id="owner-box">
+          <span id="owner-chips" class="owner-chips"></span>
+          <input id="m-owner-input" type="text" placeholder="type email, Enter to add">
+        </div>
+        <div class="form-hint">多选：输入邮箱后回车添加，点 × 移除；Owner 决定可选的 Biz Team</div>
+        <div class="form-err hidden" id="err-owner"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Biz Team：</label>
+        <select id="m-team"><option value="">Please select owner firstly!</option></select>
+        <div class="form-err hidden" id="err-team"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Description</label>
+        <textarea id="m-desc" rows="3" placeholder="please input description"></textarea>
+        <div class="form-err hidden" id="err-desc"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-model-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-model-submit">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除/下线确认 -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal modal-confirm">
+      <div class="confirm-text" id="confirm-text"></div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-confirm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-confirm-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="app.js"></script>
+</body>
+</html>

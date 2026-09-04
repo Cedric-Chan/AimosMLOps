@@ -24,10 +24,11 @@ const USER_APP = 'apps/user-mgmt/index.html';
 const AG_APP = 'apps/alert-group/index.html';
 const FE_APP = 'apps/feature-entity/index.html';
 const FT_APP = 'apps/feature-tag/index.html';
+const MM_APP = 'apps/model-mgmt/index.html';
 
 /* 应用缓存版本号：改动任一原型 app 后递增，强制浏览器刷新 iframe 里的 index.html
  * （应用的 index.html 被缓存而 assets 哈希已换时会出现空白页面） */
-const APPS_VERSION = '20260904b';
+const APPS_VERSION = '20260904c';
 const ARCH_APP = 'apps/architecture/index.html';
 
 const NAV = [
@@ -78,10 +79,8 @@ const NAV = [
         desc: '连接 DS GitLab 与 Aimos 平台的桥梁：实验记录与模型产物的同步、注册入口。原型待设计。',
         notes: ['对应线上平台 Model Platform / MLFLow 页面', '上下游关系见平台架构文档'],
         doc: `${GITHUB_BASE}/docs/model-experiment/architecture/mlflow-integration.md` },
-      { id: 'model-mgmt', label: 'Model Mgmt', type: 'placeholder',
-        desc: 'Aimos 管理模型逻辑容器（Model → ModelVersion → Build）的列表。原型待设计，领域模型参考 Model Experiment 的术语表。',
-        notes: ['对应线上平台 Model Platform / Model Management 页面', '领域模型：docs/model-experiment/GLOSSARY.md'],
-        doc: `${GITHUB_BASE}/docs/model-experiment/GLOSSARY.md` },
+      { id: 'model-mgmt', label: 'Model Mgmt', type: 'iframe', app: MM_APP,
+        desc: '模型逻辑实体管理原型：Model + Version 唯一；Create/Edit 维护元信息（Owner 多选联动 Biz Team）；Build 触发部署构建；View 查看 Build 部署明细（Model Info / Build Info / Input-Output Parameter）。' },
       { id: 'model-experiment', label: 'Model Experiment', type: 'iframe', app: ME_APP,
         desc: '由 ModelExperiment 仓库原型覆盖：训练任务全生命周期（任务配置 → 调度执行 → Pipeline → 评估 → 归档 → 注册）。' },
       { id: 'model-deployment', label: 'Model Deployment', type: 'placeholder',
