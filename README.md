@@ -21,7 +21,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | | Skill Market | Placeholder | Skill 资产市场 |
 | | Knowledge Base | Placeholder | 知识库 |
 | **Model Platform** | MLFlow | Placeholder | 连接 DS GitLab 与 Aimos 平台的桥梁 |
-| | Model Mgmt | Placeholder | 模型逻辑容器（Model / ModelVersion / Build）列表 |
+| | Model Mgmt | ✅ 原型已覆盖 | 模型逻辑实体（Model + Version）管理：状态驱动 Action、Build 明细页；规格见 docs/model-mgmt/spec.md |
 | | Model Experiment | ✅ 原型已覆盖 | 原 Model Train 改名；训练任务全生命周期（来自 ModelExperiment 仓库） |
 | | Model Deployment | Placeholder | 部署训练产物为在线服务 |
 | **Feature Store** | Data Source | ✅ 原型已覆盖 | 数据源接入与映射 |
