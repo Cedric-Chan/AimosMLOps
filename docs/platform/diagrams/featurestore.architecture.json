@@ -1,0 +1,426 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Feature Store 系统架构",
+    "locale": "zh-CN",
+    "output": "apps/architecture/featurestore-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "feature-assembly",
+        "label": "特征组装链",
+        "focus": [
+          "ds",
+          "fsource",
+          "tf",
+          "fg",
+          "fmap"
+        ],
+        "note": "DataSource 到 FeatureMap 的五层组装主线"
+      },
+      {
+        "id": "train-serve",
+        "label": "离在线双出口",
+        "focus": [
+          "fg",
+          "wt",
+          "hive",
+          "trainc",
+          "servec"
+        ],
+        "note": "训练经 WideTable，在线经 FG Serving 整包消费"
+      },
+      {
+        "id": "storage-access",
+        "label": "取数通道",
+        "focus": [
+          "fsource",
+          "ostore",
+          "be",
+          "grpc"
+        ],
+        "note": "内置函数存储访问与 BE 外调通道"
+      }
+    ],
+    "viewBox": [
+      1390,
+      620
+    ]
+  },
+  "components": [
+    {
+      "id": "meta",
+      "type": "external",
+      "label": "元数据平台",
+      "sublabel": "Unity Catalog",
+      "pos": [
+        40,
+        112
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "ds",
+      "type": "backend",
+      "label": "DataSource",
+      "sublabel": "管线追踪 · 只读投影",
+      "pos": [
+        280,
+        112
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "fsource",
+      "type": "backend",
+      "label": "FeatureSource",
+      "sublabel": "Groovy DSL 取数",
+      "pos": [
+        530,
+        112
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "ostore",
+      "type": "database",
+      "label": "HBase / Redis / GraphDB",
+      "sublabel": "内置函数访问",
+      "pos": [
+        520,
+        252
+      ],
+      "size": [
+        190,
+        56
+      ]
+    },
+    {
+      "id": "be",
+      "type": "backend",
+      "label": "平台 BE",
+      "sublabel": "HTTP / RPC 外调",
+      "pos": [
+        830,
+        252
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "grpc",
+      "type": "external",
+      "label": "在线接口",
+      "sublabel": "gRPC",
+      "pos": [
+        1130,
+        254
+      ],
+      "size": [
+        130,
+        56
+      ]
+    },
+    {
+      "id": "tf",
+      "type": "backend",
+      "label": "Transformer",
+      "sublabel": "Groovy / Python · 版本管理",
+      "pos": [
+        250,
+        392
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "fg",
+      "type": "backend",
+      "label": "FeatureGroup",
+      "sublabel": "特征包 · 对外唯一出口",
+      "pos": [
+        540,
+        392
+      ],
+      "size": [
+        180,
+        72
+      ],
+      "tag": "Train-Serve 一致"
+    },
+    {
+      "id": "fmap",
+      "type": "frontend",
+      "label": "FeatureMap",
+      "sublabel": "Feature 粒度检索 · Cart",
+      "pos": [
+        860,
+        392
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "hive",
+      "type": "database",
+      "label": "Hive",
+      "sublabel": "ODS · 宽表产物",
+      "pos": [
+        40,
+        532
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "wt",
+      "type": "backend",
+      "label": "WideTable 画布",
+      "sublabel": "Smart Join · PIT",
+      "pos": [
+        540,
+        532
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "trainc",
+      "type": "external",
+      "label": "训练消费",
+      "sublabel": "Training · Backfill",
+      "pos": [
+        810,
+        532
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "servec",
+      "type": "external",
+      "label": "在线消费",
+      "sublabel": "Serving · Workflow",
+      "pos": [
+        1040,
+        532
+      ],
+      "size": [
+        160,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "在线特征平台（Feature Store）",
+      "wraps": [
+        "ds",
+        "fsource",
+        "tf",
+        "fg",
+        "fmap",
+        "wt",
+        "be"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "id": "meta-ds",
+      "from": "meta",
+      "to": "ds",
+      "label": "T+1 同步",
+      "variant": "dashed",
+      "labelAt": [
+        240,
+        130
+      ]
+    },
+    {
+      "id": "ds-fsource",
+      "from": "ds",
+      "to": "fsource",
+      "label": "血缘起点"
+    },
+    {
+      "id": "fs-ostore",
+      "from": "fsource",
+      "to": "ostore",
+      "label": "内置函数",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        668,
+        214
+      ]
+    },
+    {
+      "id": "fsource-be",
+      "from": "fsource",
+      "to": "be",
+      "label": "外调执行",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          765,
+          144
+        ],
+        [
+          765,
+          282
+        ]
+      ],
+      "labelAt": [
+        715,
+        213
+      ]
+    },
+    {
+      "id": "be-grpc",
+      "from": "be",
+      "to": "grpc",
+      "label": "gRPC"
+    },
+    {
+      "id": "fg-fsource",
+      "from": "fg",
+      "to": "fsource",
+      "label": "绑定 1 个 FS",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          630,
+          370
+        ],
+        [
+          790,
+          370
+        ],
+        [
+          790,
+          100
+        ],
+        [
+          615,
+          100
+        ]
+      ],
+      "labelAt": [
+        710,
+        356
+      ]
+    },
+    {
+      "id": "fg-tf",
+      "from": "fg",
+      "to": "tf",
+      "label": "绑定 TF 版"
+    },
+    {
+      "id": "fg-fmap",
+      "from": "fg",
+      "to": "fmap",
+      "label": "自动同步"
+    },
+    {
+      "id": "fg-wt",
+      "from": "fg",
+      "to": "wt",
+      "label": "Feature Cart 选取",
+      "labelAt": [
+        525,
+        498
+      ]
+    },
+    {
+      "id": "fg-servec",
+      "from": "fg",
+      "to": "servec",
+      "label": "FG Serving 整包",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          630,
+          500
+        ],
+        [
+          1120,
+          500
+        ]
+      ]
+    },
+    {
+      "id": "hive-wt",
+      "from": "hive",
+      "to": "wt",
+      "label": "Key Table",
+      "variant": "dashed"
+    },
+    {
+      "id": "wt-trainc",
+      "from": "wt",
+      "to": "trainc",
+      "label": "PIT 训练集",
+      "variant": "emphasis",
+      "labelAt": [
+        765,
+        590
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "五层组装",
+      "items": [
+        "DataSource → FeatureSource → Transformation → FeatureGroup → FeatureMap 五层组装，WideTable 为消费层",
+        "FG = 1 FeatureSource + 1 Transformer Version，产出该版本全部 Fine Feature"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "离在线一致",
+      "items": [
+        "训练与 Serving 绑定同一 Transformer Version，由 FG 层保障一致性，避免 Skew",
+        "训练经 WideTable（Point-in-Time Join）落 Hive；在线经 FG Serving 整包消费"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "平台边界",
+      "items": [
+        "FG 特征数据只读，摄入由上游管道完成；DataSource 元数据自外部平台 T+1 同步",
+        "HBase / Redis / GraphDB 经内置函数访问；gRPC 在线接口由平台 BE 外调执行"
+      ]
+    }
+  ]
+}

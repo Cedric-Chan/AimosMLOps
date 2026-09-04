@@ -425,7 +425,7 @@
       "dot": "emerald",
       "title": "特征链路",
       "items": [
-        "DataSource → FeatureSource → Transformation → FeatureGroup 五层组装",
+        "DataSource → FeatureSource → Transformation → FeatureGroup → FeatureMap 五层组装",
         "FG 层绑定同一 Transformer Version，保障离在线一致性，避免 Training / Serving Skew"
       ]
     },

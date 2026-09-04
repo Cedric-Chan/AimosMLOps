@@ -80,14 +80,14 @@
       "type": "database",
       "label": "Hive ODS",
       "stage": 0,
-      "row": 1
+      "row": 2
     },
     {
       "id": "kafka",
       "type": "messagebus",
       "label": "Kafka",
       "stage": 0,
-      "row": 2
+      "row": 1
     },
     {
       "id": "mlflow",
@@ -101,7 +101,7 @@
       "type": "backend",
       "label": "Feature Store",
       "stage": 1,
-      "row": 1,
+      "row": 2,
       "tag": "离在线一致性"
     },
     {
@@ -109,7 +109,7 @@
       "type": "database",
       "label": "HBase / Redis",
       "stage": 1,
-      "row": 2
+      "row": 1
     },
     {
       "id": "exp",
@@ -159,6 +159,14 @@
       "label": "业务系统",
       "stage": 4,
       "row": 0
+    },
+    {
+      "id": "fmap",
+      "type": "frontend",
+      "label": "FeatureMap",
+      "stage": 1,
+      "row": 3,
+      "tag": "Feature 粒度检索"
     }
   ],
   "flows": [
@@ -192,7 +200,11 @@
       "to": "fs",
       "label": "FS 取数",
       "classification": "Raw Feature",
-      "labelDy": -16
+      "labelDy": -16,
+      "labelAt": [
+        360,
+        328
+      ]
     },
     {
       "id": "mlflow-exp",
@@ -201,12 +213,6 @@
       "label": "Exp / Run 映射",
       "classification": "实验元数据",
       "variant": "emphasis",
-      "via": [
-        [
-          422,
-          157
-        ]
-      ],
       "labelAt": [
         422,
         134
@@ -216,8 +222,20 @@
       "id": "fs-exp",
       "from": "fs",
       "to": "exp",
-      "label": "WideTable · PIT Join",
-      "classification": "训练数据"
+      "label": "WideTable",
+      "classification": "训练数据",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          422,
+          385
+        ],
+        [
+          422,
+          157
+        ]
+      ]
     },
     {
       "id": "exp-ray",
@@ -232,7 +250,7 @@
       "id": "ray-s3",
       "from": "ray",
       "to": "s3",
-      "label": "产物落盘",
+      "label": "Datasource 装载 / 产物",
       "classification": "Artifact",
       "labelDy": 24
     },
@@ -271,21 +289,21 @@
       "toSide": "bottom",
       "via": [
         [
-          434,
-          271
+          450,
+          385
         ],
         [
-          434,
-          460
+          450,
+          428
         ],
         [
           960,
-          460
+          428
         ]
       ],
       "labelAt": [
         700,
-        445
+        442
       ]
     },
     {
@@ -296,6 +314,20 @@
       "classification": "推理输出",
       "variant": "emphasis",
       "labelDy": -14
+    },
+    {
+      "id": "fs-fmap",
+      "from": "fs",
+      "to": "fmap",
+      "label": "Feature 级同步",
+      "classification": "检索文档",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        365,
+        427
+      ]
     }
   ],
   "cards": [
@@ -312,7 +344,8 @@
       "title": "特征离在线双流",
       "items": [
         "离线流：Hive ODS 元数据 T+1 同步为 DataSource，经 FS→TF→FG 组装，WideTable 以 Point-in-Time Join 产出训练集",
-        "在线流：Kafka 经上游 Flink 写入 HBase / Redis，FeatureSource 取数后由 FG 层映射为一致口径的在线特征"
+        "在线流：Kafka 经上游 Flink 写入 HBase / Redis，FeatureSource 取数后由 FG 层映射为一致口径的在线特征",
+        "FeatureMap 平铺同步 FG 全部 Feature，提供最细特征粒度检索与 Feature Cart"
       ]
     },
     {
@@ -320,7 +353,7 @@
       "title": "平台边界",
       "items": [
         "上游数据准备（Flink 写 HBase、Hive 入湖）不属本平台",
-        "训练数据为有权限的任意 Hive 表（含 WideTable 产物），与特征平台松耦合"
+        "训练数据为有权限的任意 Hive 表；Experiment 首个节点 Datasource 将其装载至 S3 供 Ray 读取"
       ]
     }
   ]

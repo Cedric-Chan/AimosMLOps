@@ -117,11 +117,14 @@
     <div class="tabs" id="tabs">
       <button class="tab active" data-pane="overview">架构总览</button>
       <button class="tab" data-pane="dataflow">端到端数据流</button>
-      <button class="tab" data-pane="notes">说明与待确认</button>
+      <button class="tab" data-pane="fsarch">FS 架构</button>
+      <button class="tab" data-pane="fsflow">FS 数据流</button>
+      <button class="tab" data-pane="notes">说明与口径</button>
     </div>
     <div class="arch-meta">
       <a href="platform-architecture.html" target="_blank" rel="noopener">总览 ↗</a>
       <a href="platform-dataflow.html" target="_blank" rel="noopener">数据流 ↗</a>
+      <a href="featurestore-architecture.html" target="_blank" rel="noopener">FS 架构 ↗</a>
       · archify 生成 · 源 <a href="https://github.com/Cedric-Chan/AimosMLOps/tree/main/docs/platform/diagrams" target="_blank" rel="noopener">docs/platform/diagrams</a>
     </div>
   </div>
@@ -133,29 +136,36 @@
     <div class="pane" data-pane="dataflow">
       <iframe src="platform-dataflow.html?theme=light" title="Aimos 端到端数据流"></iframe>
     </div>
+    <div class="pane" data-pane="fsarch">
+      <iframe src="featurestore-architecture.html?theme=light" title="Feature Store 系统架构"></iframe>
+    </div>
+    <div class="pane" data-pane="fsflow">
+      <iframe src="featurestore-dataflow.html?theme=light" title="Feature Store 数据流"></iframe>
+    </div>
     <div class="pane" data-pane="notes">
       <div class="notes"><div class="notes-inner">
         <h1>平台架构图册<span class="chip">archify 2.17</span></h1>
         <p class="lead">
-          本图册由 <a href="https://github.com/tt-a1i/archify" target="_blank" rel="noopener">archify</a> 从平台文档梳理生成，包含两张交互图：
-          <b>架构总览</b>（模块组件与依赖关系）与<b>端到端数据流</b>（数据与代码资产在五个阶段间的流转）。
-          图内支持主题切换、缩放、搜索（/）、角色视角（L）与导图（M）。规格源文件与完整说明见
+          本图册由 <a href="https://github.com/tt-a1i/archify" target="_blank" rel="noopener">archify</a> 从平台文档梳理生成，共四张交互图：
+          <b>架构总览</b>与<b>端到端数据流</b>为平台级视图，<b>FS 架构</b>与<b>FS 数据流</b>为 Feature Store 模块视图（自 archify 2.6.0 旧图迁移重绘）。
+          图内支持主题切换、缩放、搜索（/）、角色视角（L）与导图（M）。规格源与完整说明见
           <a href="https://github.com/Cedric-Chan/AimosMLOps/tree/main/docs/platform/diagrams" target="_blank" rel="noopener">docs/platform/diagrams</a>。
         </p>
 
         <h2>图纸与来源</h2>
         <ul>
-          <li><b>架构总览</b> — 源规格 <code>aimos-platform.architecture.json</code>，依据 <code>docs/platform/architecture.md</code> 的模块分层与端到端关系。</li>
-          <li><b>端到端数据流</b> — 源规格 <code>aimos-platform.dataflow.json</code>，依据平台架构文档 §2 与特征平台 §8.1 资产流转全景。</li>
-          <li>模块细节来自：<code>docs/feature-store/architecture/在线特征平台架构说明.md</code>、<code>docs/model-experiment/architecture/系统架构说明.md</code>、<code>mlflow-integration.md</code>。</li>
+          <li><b>架构总览</b> — <code>aimos-platform.architecture.json</code>，依据 <code>docs/platform/architecture.md</code> 模块分层与端到端关系。</li>
+          <li><b>端到端数据流</b> — <code>aimos-platform.dataflow.json</code>，覆盖数据与代码源 → 特征生产 → 模型训练 → 注册交付 → 在线服务五阶段。</li>
+          <li><b>FS 架构 / FS 数据流</b> — <code>featurestore.architecture.json</code>、<code>featurestore.dataflow.json</code>，依据《在线特征平台架构说明》五层架构、§8.1 资产流转与离在线双流；替代已删除的旧 <code>public/architecture</code> 资产。</li>
         </ul>
 
-        <h2>待确认事项<span class="warn-chip">Pending</span></h2>
+        <h2>口径确认<span class="chip">已确认 · 2026-09</span></h2>
         <ul>
-          <li><b>训练数据物理路径</b>：Model Experiment 文档中 RunConfig 数据源为 Hive 表，而执行层描述为「Ray Dataset 从 S3 路径读取」。图按「训练数据取自 Hive（含 WideTable 产物）、产物落 S3」表达，<b>待与工程确认</b> Hive → S3 的导入环节归属。</li>
-          <li><b>AI Hub → Online Runtime 供给关系</b>：LLM Workflow 消费 AI Hub 资产的链路按 README 架构示意推导，<b>待产品确认</b>交互协议与治理边界。</li>
-          <li><b>FeatureMap 是否入图</b>：FeatureMap 为检索文档层、非数据流参与方，暂不入图；如需展示检索链路可加第三张图。</li>
-          <li><b>旧 Feature Store 级架构图</b>：<code>apps/feature-store/public/architecture/</code> 下仍存有 archify 2.6.0 版旧图（featurestore-arch / featurestore-dataflow），是否迁移并入本图册待定。</li>
+          <li><b>训练数据物理路径</b>：训练数据为有权限的任意 Hive 表（含 WideTable 产物）；<b>Experiment 首个节点 Datasource 负责 Hive → S3 装载</b>，Ray 集群经 Ray Dataset 从 S3 读取执行（图：ray→s3 边标注 Datasource 装载 / 产物）。</li>
+          <li><b>AI Hub → Online Runtime</b>：LLM / Skill / KB 资产供给在线服务的链路<b>确认成立</b>（架构总览对应边）。</li>
+          <li><b>FeatureMap</b>：已入图——平台数据流的特征生产阶段（FG 发布自动同步）+ FS 两图（FG → FeatureMap 检索出口，<b>最细特征粒度</b>检索与 Feature Cart）。</li>
+          <li><b>旧 Feature Store 架构图</b>：archify 2.6.0 旧资产经 visual-check 验证不满足视口标准，已按当前文档用 2.17 重绘迁入本图册，旧文件与 FS 应用 <code>#/arch</code> 路由一并移除。</li>
+          <li><b>Console / Background Task</b>：维持现状——折叠为 Web Console 副标签；Background Task 为临时后台任务位，暂不细化。</li>
         </ul>
 
         <div class="footer-note">Aimos MLOps 平台交互 Demo · 架构内容由 docs/platform/ 文档驱动，重新生成命令见仓库 docs/platform/architecture-diagrams.md</div>
@@ -164,12 +174,12 @@
   </div>
 
   <script>
-    // hash 路由：#overview / #dataflow / #notes，刷新后保持当前页签
+    // hash 路由：#overview / #dataflow / #fsarch / #fsflow / #notes，刷新后保持当前页签
     const tabs = document.querySelectorAll('.tab');
     const panes = document.querySelectorAll('.pane');
 
     function activate(name) {
-      const valid = ['overview', 'dataflow', 'notes'].includes(name) ? name : 'overview';
+      const valid = ['overview', 'dataflow', 'fsarch', 'fsflow', 'notes'].includes(name) ? name : 'overview';
       tabs.forEach((t) => t.classList.toggle('active', t.dataset.pane === valid));
       panes.forEach((p) => p.classList.toggle('active', p.dataset.pane === valid));
     }

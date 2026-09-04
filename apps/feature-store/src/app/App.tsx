@@ -17,7 +17,6 @@ import { TaskMonitorPage } from "@/app/pages/TaskMonitorPage";
 import { TransformationFormPage } from "@/app/pages/TransformationFormPage";
 import { TransformationListPage } from "@/app/pages/TransformationListPage";
 import { DataSourceMappingPage } from "@/app/pages/DataSourceMappingPage";
-import { ArchitectPage } from "@/app/pages/ArchitectPage";
 
 export default function App() {
   return (
@@ -45,7 +44,6 @@ export default function App() {
         <Route path="/fm/feature/:fqid" element={<FeatureMapDetailPage />} />
         <Route path="/wt" element={<WideTableListPage />} />
         <Route path="/wt/task/:instanceId" element={<TaskMonitorPage />} />
-        <Route path="/arch" element={<ArchitectPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/wt" replace />} />

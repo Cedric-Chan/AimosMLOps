@@ -9,7 +9,7 @@ import {
   Layers,
   Table2,
   Zap,
-  Box,
+
 } from "lucide-react";
 import { Toaster } from "sonner";
 
@@ -28,7 +28,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/fg", label: "Feature Group", end: false, Icon: Layers, accent: "text-violet-700" },
   { to: "/fm", label: "Feature Map", end: true, Icon: GitBranch, accent: "text-rose-700" },
   { to: "/wt", label: "WideTable", end: false, Icon: Table2, accent: "text-teal-700" },
-  { to: "/arch", label: "Architect", end: true, Icon: Box, accent: "text-slate-700" },
 ];
 
 export function AppShell() {
