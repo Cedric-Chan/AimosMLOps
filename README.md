@@ -32,7 +32,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | | Feature Entity | Placeholder | 特征实体管理（原型暂缺独立页） |
 | | Feature Tag | Placeholder | 特征标签管理（现内嵌于 Feature Map 过滤） |
 | | Wide Table | ✅ 原型已覆盖 | 离线宽表画布 |
-| | Architecture | ✅ 原型已覆盖 | 平台架构图册（archify 生成：架构总览 / 端到端数据流 / 说明与待确认），入口在左下角页脚 |
+| | Architecture | ✅ 原型已覆盖 | 平台架构图册（archify 生成：平台架构总览 / 端到端数据流 / FS 架构 / FS 数据流），入口在左下角页脚 |
 | **Console** | User | ✅ 原型已覆盖 | 多 Biz Team 归属 + Team 内单角色（Viewer/Editor/Admin）+ Team Dir 管理；规格见 docs/user-mgmt/spec.md（Udf 暂不纳入） |
 | | Alert Group | ✅ 原型已覆盖 | 告警接收组（Name / Type / Webhook）管理，Verify 发送测试消息动效 |
 | **Background Task** | — | Placeholder | 后台任务（独立顶级模块） |
@@ -74,7 +74,7 @@ Aimos MLOps/
 ├── assets/                        # 平台壳样式与导航配置（shell.js 为导航唯一配置源）
 ├── apps/
 │   ├── feature-store/             # Feature Store 原型（Vite + React，来自 FeatureStore 仓库）
-│   │                              #   hash 路由：#/ds #/fs #/tf #/fg #/fm #/wt #/arch
+│   │                              #   hash 路由：#/ds #/fs #/tf #/fg #/fm #/wt（#/arch 已并入平台架构图册）
 │   └── model-experiment/          # Model Experiment 原型（Vite + React，来自 ModelExperiment 仓库）
 │   └── user-mgmt/                 # Console / User 原型（纯静态 HTML/CSS/JS，无构建）
 │   └── alert-group/               # Console / Alert Group 原型（纯静态，无构建）

@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Feature Store 数据流",
+    "locale": "zh-CN",
+    "output": "apps/architecture/featurestore-dataflow.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1400,
+      700
+    ],
+    "views": [
+      {
+        "id": "offline-path",
+        "label": "离线特征流",
+        "focus": [
+          "hive-ods",
+          "fsource",
+          "tf",
+          "fg",
+          "wt",
+          "training"
+        ],
+        "note": "ODS 经五层组装为 Point-in-Time 训练集"
+      },
+      {
+        "id": "online-path",
+        "label": "在线特征流",
+        "focus": [
+          "kafka",
+          "ostore",
+          "fsource",
+          "fg",
+          "serving"
+        ],
+        "note": "准实时流入在线存储，经 FG Serving 供给推理"
+      },
+      {
+        "id": "retrieval",
+        "label": "特征检索",
+        "focus": [
+          "fg",
+          "fmap"
+        ],
+        "note": "FeatureMap 平铺 FG 全部 Feature 供检索"
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "上游数据"
+    },
+    {
+      "label": "在线存储"
+    },
+    {
+      "label": "取数与加工"
+    },
+    {
+      "label": "特征出口"
+    },
+    {
+      "label": "消费场景"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "ext-api",
+      "type": "external",
+      "label": "在线接口",
+      "stage": 0,
+      "row": 0,
+      "tag": "gRPC / HTTP"
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "stage": 0,
+      "row": 1,
+      "tag": "业务准实时流"
+    },
+    {
+      "id": "hive-ods",
+      "type": "database",
+      "label": "Hive ODS",
+      "stage": 0,
+      "row": 2,
+      "tag": "离线批量"
+    },
+    {
+      "id": "ostore",
+      "type": "database",
+      "label": "HBase / Redis",
+      "stage": 1,
+      "row": 1,
+      "tag": "在线特征存储"
+    },
+    {
+      "id": "fsource",
+      "type": "backend",
+      "label": "FeatureSource",
+      "stage": 2,
+      "row": 0,
+      "tag": "Groovy DSL"
+    },
+    {
+      "id": "tf",
+      "type": "backend",
+      "label": "Transformation",
+      "stage": 2,
+      "row": 1,
+      "tag": "Groovy / Python"
+    },
+    {
+      "id": "fg",
+      "type": "backend",
+      "label": "FeatureGroup",
+      "stage": 3,
+      "row": 0,
+      "tag": "Train-Serve 一致"
+    },
+    {
+      "id": "wt",
+      "type": "backend",
+      "label": "WideTable",
+      "stage": 3,
+      "row": 1,
+      "tag": "Smart Join · PIT"
+    },
+    {
+      "id": "serving",
+      "type": "external",
+      "label": "Serving / Workflow",
+      "stage": 4,
+      "row": 0
+    },
+    {
+      "id": "training",
+      "type": "external",
+      "label": "Training / Backfill",
+      "stage": 4,
+      "row": 1
+    },
+    {
+      "id": "fmap",
+      "type": "frontend",
+      "label": "FeatureMap",
+      "stage": 4,
+      "row": 2,
+      "tag": "Feature 粒度检索"
+    }
+  ],
+  "flows": [
+    {
+      "id": "ods-ostore",
+      "from": "hive-ods",
+      "to": "ostore",
+      "label": "T+1 导入",
+      "classification": "上游准备",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [
+        [
+          207,
+          385
+        ],
+        [
+          207,
+          330
+        ],
+        [
+          315,
+          330
+        ]
+      ],
+      "labelAt": [
+        255,
+        316
+      ]
+    },
+    {
+      "id": "kafka-ostore",
+      "from": "kafka",
+      "to": "ostore",
+      "label": "Flink 写入",
+      "classification": "上游准备",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": 22
+    },
+    {
+      "id": "extapi-fsource",
+      "from": "ext-api",
+      "to": "fsource",
+      "label": "BE 外调",
+      "classification": "Raw Feature",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          207,
+          157
+        ],
+        [
+          207,
+          110
+        ],
+        [
+          530,
+          110
+        ]
+      ],
+      "labelAt": [
+        243,
+        133
+      ]
+    },
+    {
+      "id": "ostore-fsource",
+      "from": "ostore",
+      "to": "fsource",
+      "label": "Scan",
+      "classification": "Raw Feature",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          422,
+          271
+        ],
+        [
+          422,
+          157
+        ]
+      ],
+      "labelAt": [
+        385,
+        220
+      ]
+    },
+    {
+      "id": "fsource-tf",
+      "from": "fsource",
+      "to": "tf",
+      "label": "Raw Feature",
+      "classification": "算子输入",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        585,
+        214
+      ]
+    },
+    {
+      "id": "tf-fg",
+      "from": "tf",
+      "to": "fg",
+      "label": "Fine Feature",
+      "classification": "TF Version 加工",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          637,
+          271
+        ],
+        [
+          637,
+          157
+        ]
+      ],
+      "labelAt": [
+        640,
+        143
+      ]
+    },
+    {
+      "id": "fg-wt",
+      "from": "fg",
+      "to": "wt",
+      "label": "Feature Cart 选取",
+      "classification": "训练配置",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        691,
+        207
+      ]
+    },
+    {
+      "id": "wt-training",
+      "from": "wt",
+      "to": "training",
+      "label": "PIT 训练集",
+      "classification": "训练数据",
+      "variant": "emphasis",
+      "labelAt": [
+        852,
+        257
+      ]
+    },
+    {
+      "id": "fg-serving",
+      "from": "fg",
+      "to": "serving",
+      "label": "Serving 整包",
+      "classification": "在线特征",
+      "variant": "emphasis",
+      "labelAt": [
+        852,
+        143
+      ]
+    },
+    {
+      "id": "fg-fmap",
+      "from": "fg",
+      "to": "fmap",
+      "label": "Feature 级同步",
+      "classification": "检索文档",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "right",
+      "via": [
+        [
+          745,
+          100
+        ],
+        [
+          1080,
+          100
+        ],
+        [
+          1080,
+          385
+        ]
+      ],
+      "labelAt": [
+        950,
+        86
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "离在线双流",
+      "items": [
+        "离线流：Hive ODS 经五层组装为 WideTable 训练集（Point-in-Time Join 落 Hive）",
+        "在线流：Kafka / Hive 经上游写入 HBase / Redis，FG 层映射为一致口径在线特征"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "特征出口",
+      "items": [
+        "FeatureGroup 为对外唯一出口：训练经 WideTable、在线经 FG Serving 整包消费",
+        "FeatureMap 平铺 FG 全部 Feature，提供最细特征粒度检索与 Feature Cart"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "平台边界",
+      "items": [
+        "上游数据准备（T+1 导入 / Flink 写入）不属平台；FG 特征数据只读",
+        "训练与 Serving 绑定同一 Transformer Version，由 FG 层保障一致性"
+      ]
+    }
+  ]
+}
