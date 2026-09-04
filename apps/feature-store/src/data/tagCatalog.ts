@@ -23,7 +23,7 @@ export interface CatalogTag {
   description: string;
 }
 
-export const TAG_CATALOG: CatalogTag[] = [
+export const SEED_CATALOG: CatalogTag[] = [
   // ── Topic — 业务域 / what the feature is about ─────────────────────────────
   { id: "credit", label: "credit", facet: "Topic", description: "Credit & lending signals" },
   { id: "risk", label: "risk", facet: "Topic", description: "Risk scoring & control" },
@@ -57,6 +57,41 @@ export const TAG_CATALOG: CatalogTag[] = [
   { id: "psi-stable", label: "psi-stable", facet: "Quality", description: "Stable population (low PSI)" },
   { id: "drift-prone", label: "drift-prone", facet: "Quality", description: "Prone to distribution drift" },
 ];
+
+/**
+ * Feature Tag registry — maintained by the Feature Tag module and shared via
+ * localStorage (same origin). Registry entries win on id collision; the seed
+ * stays as fallback so mock features keep their tags before the portal is
+ * wired for real.
+ */
+function loadRegistryTags(): CatalogTag[] {
+  try {
+    const raw = localStorage.getItem("aimos.ft.tags");
+    if (!raw) return [];
+    const rows = JSON.parse(raw) as { category?: string; tag?: string; desc?: string }[];
+    if (!Array.isArray(rows)) return [];
+    const out: CatalogTag[] = [];
+    for (const r of rows) {
+      const tag = (r.tag || "").trim();
+      if (!tag) continue;
+      out.push({
+        id: tag,
+        label: tag,
+        facet: (r.category || "Uncategorized").trim(),
+        description: r.desc || "",
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+export const TAG_CATALOG: CatalogTag[] = (() => {
+  const merged = new Map(SEED_CATALOG.map((t) => [t.id, t]));
+  for (const t of loadRegistryTags()) merged.set(t.id, t);
+  return [...merged.values()];
+})();
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 

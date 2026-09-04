@@ -29,8 +29,8 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | | Transformation | ✅ 原型已覆盖 | 特征转换加工 |
 | | Feature Group | ✅ 原型已覆盖 | 特征包组装与在线/离线 Serving |
 | | Feature Map | ✅ 原型已覆盖 | 特征检索文档 |
-| | Feature Entity | Placeholder | 特征实体管理（原型暂缺独立页） |
-| | Feature Tag | Placeholder | 特征标签管理（现内嵌于 Feature Map 过滤） |
+| | Feature Entity | ✅ 原型已覆盖 | 实体唯一说明管理（FG 注册 / Orches Start 节点补全；未来承载实体治理）；规格见 docs/feature-entity/spec.md |
+| | Feature Tag | ✅ 原型已覆盖 | 二级结构 Category → Tag，Category Dir 管理；注册 Tag 供 Feature Map 打标与检索（localStorage 共享）；规格见 docs/feature-tag/spec.md |
 | | Wide Table | ✅ 原型已覆盖 | 离线宽表画布 |
 | | Architecture | ✅ 原型已覆盖 | 平台架构图册（archify 生成：平台架构总览 / 端到端数据流 / FS 架构 / FS 数据流），入口在左下角页脚 |
 | **Console** | User | ✅ 原型已覆盖 | 多 Biz Team 归属 + Team 内单角色（Viewer/Editor/Admin）+ Team Dir 管理；规格见 docs/user-mgmt/spec.md（Udf 暂不纳入） |
@@ -79,9 +79,13 @@ Aimos MLOps/
 │   └── user-mgmt/                 # Console / User 原型（纯静态 HTML/CSS/JS，无构建）
 │   └── alert-group/               # Console / Alert Group 原型（纯静态，无构建）
 │   └── architecture/              # 平台架构图册（archify 生成交互图 + 嵌入页，纯静态，无构建）
+│   └── feature-entity/            # Feature Store / Feature Entity 原型（纯静态，无构建）
+│   └── feature-tag/               # Feature Store / Feature Tag 原型（纯静态，无构建）
 ├── docs/
 │   ├── platform/                  # 平台级文档（架构总览、模块清单）
 │   ├── user-mgmt/                 # User 模块领域规则与交互规格
+│   ├── feature-entity/            # Feature Entity 领域规则与交互规格
+│   ├── feature-tag/               # Feature Tag 领域规则与交互规格
 │   ├── feature-store/             # Feature Store 设计文档（架构 / PRD / 前端规格 / API / 调研）
 │   └── model-experiment/          # Model Experiment 文档（系统架构 / PRD / 流水线 / 术语表 / API）
 └── .github/workflows/
