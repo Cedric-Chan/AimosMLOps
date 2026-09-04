@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feature Entity · Aimos</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="page">
+
+    <!-- 筛选栏 -->
+    <div class="card filter-bar">
+      <div class="filter-item">
+        <label>Entity：</label>
+        <input id="f-entity" type="text" placeholder="Please enter">
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-default" id="btn-reset">Reset</button>
+        <button class="btn btn-primary" id="btn-query">Query</button>
+      </div>
+    </div>
+
+    <!-- 列表卡片 -->
+    <div class="card">
+      <div class="list-header">
+        <span class="list-title">Entity Mgmt</span>
+        <button class="btn btn-primary" id="btn-add">Add Entity</button>
+        <div class="toolbar-icons">
+          <button class="icon-btn" id="btn-refresh" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-info" title="实体说明">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-settings" title="预留">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <table class="entity-table">
+        <thead>
+          <tr>
+            <th style="width:22%">Entity</th>
+            <th style="width:38%">Description</th>
+            <th style="width:26%">Update Time</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+
+      <div class="pagination">
+        <span id="page-total" class="page-total"></span>
+        <div id="page-buttons" class="page-buttons"></div>
+        <select id="page-size">
+          <option value="10" selected>10 / page</option>
+          <option value="20">20 / page</option>
+          <option value="50">50 / page</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit Entity 弹窗 -->
+  <div id="entity-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">
+        <span id="entity-modal-title">Add Entity</span>
+        <button class="modal-close" id="btn-entity-modal-close">×</button>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Entity</label>
+        <div class="input-wrap">
+          <input id="m-entity" type="text" placeholder="Please Input Entity">
+          <button class="input-clear" data-for="m-entity" title="Clear">⊗</button>
+        </div>
+        <div class="form-err hidden" id="err-entity"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Description</label>
+        <div class="input-wrap">
+          <textarea id="m-desc" rows="3" placeholder="实体唯一说明，避免混用和歧义"></textarea>
+          <button class="input-clear" data-for="m-desc" title="Clear">⊗</button>
+        </div>
+        <div class="form-err hidden" id="err-desc"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-entity-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-entity-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认 -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal modal-confirm">
+      <div class="confirm-text" id="confirm-text"></div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-confirm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-confirm-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="app.js"></script>
+</body>
+</html>
