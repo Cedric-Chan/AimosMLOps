@@ -24,8 +24,8 @@
 
 | 子模块 | 状态 | 说明 | 待设计事项 |
 |--------|------|------|-----------|
-| MLFlow | 🟡 | 连接 DS GitLab 与 Aimos 平台的桥梁（实验产物同步） | 集成架构已定（见 mlflow-integration.md），管理页 UI 待设计 |
-| Model Mgmt | ✅ | 模型逻辑实体管理（Name+Version 唯一；状态驱动 Action：Deployed→View/Edit/Build/Deprecate，Deprecate→View；View=Build 部署明细页）。原型 `apps/model-mgmt/`，规格见 [model-mgmt/spec.md](../model-mgmt/spec.md) | 新模型初始态、Owner→Biz Team 真实来源、Deprecate 前置校验待定 |
+| MLFlow | ✅ | 内部改造并嵌入的开源 MLflow，承担训练迭代管理（Tracking + Registry）：Run 对比 / 指标曲线 / Artifact 浏览 / 模型版本 lineage，并以平台 MLFlow 页签内嵌其 UI。原型 `apps/mlflow/`（静态示意，无交互），集成设计见 [model-experiment/architecture/mlflow-integration.md](../model-experiment/architecture/mlflow-integration.md) | 真实嵌入联调（SSO / 权限打通）、Run 详情"在 MLflow 中查看"跳转、Registry Alias 与 Build 状态联动口径（见该文档 §8 待确认） |
+| Model Mgmt | ✅ | 模型逻辑实体管理（Name+Version 唯一；状态链已确认 Draft → Deployed → Offline；View=Build 部署明细页）。原型 `apps/model-mgmt/`（仍为 Deployed/Deprecate 两态待对齐），规格见 [model-mgmt/spec.md](../model-mgmt/spec.md) | Owner→Biz Team 真实来源、Offline 前置校验、状态链原型对齐 |
 | Model Experiment | ✅ | 原「Model Train」改名；训练任务全生命周期：任务配置 → 调度执行 → Pipeline → 评估 → 归档 → 注册。原型来自 ModelExperiment 仓库 | 原型已对齐 GitPages PRD；持续迭代中 |
 | Model Deployment | 🟡 | 部署训练产物（Build）为在线推理服务 | 部署表单、实例列表、发布与回滚 |
 
@@ -41,7 +41,7 @@
 | Feature Entity | ✅ | 实体唯一说明管理（Entity 唯一 + Description 必填）；当前用于 FG 注册 / Orches Start 节点补全。原型 `apps/feature-entity/`，规格见 [feature-entity/spec.md](../feature-entity/spec.md) | 命名规范强制、反向引用列表、多实体关系建模待定 |
 | Feature Tag | ✅ | 二级结构 Category → Feature Tag；Category Dir 浮窗管理一级目录（删除级联）；注册表经 localStorage 供 Feature Map 打标与检索。原型 `apps/feature-tag/`，规格见 [feature-tag/spec.md](../feature-tag/spec.md) | 删除级联提示、多级 Category、Tag 权限治理待定 |
 | Wide Table | ✅ | 离线宽表画布（`#/wt`） | — |
-| Architecture | ✅ | 平台架构图册（archify 生成）：平台架构总览 / 端到端数据流 / FS 架构 / FS 数据流 四图 + 说明与口径；入口在页面左下角页脚（不在导航组内）。原型 `apps/architecture/`，规格源与维护约定见 [architecture-diagrams.md](architecture-diagrams.md) | 源规格迭代须走 validate → deliver 流程；已确认口径见 architecture-diagrams.md |
+| Architecture | ✅ | 平台架构页（archify 图 + 导览）：平台导览（故事线 / 能力地图 / 关键机制）+ 平台全景（架构总览 / 端到端数据流）+ FS 专题（系统架构 / 数据流）三段式；入口在页面左下角页脚（不在导航组内）。原型 `apps/architecture/`，规格源与维护约定见 [architecture-diagrams.md](architecture-diagrams.md) | 源规格迭代须走 validate → deliver 流程；已确认口径见 architecture-diagrams.md |
 
 ## Console / Background Task
 

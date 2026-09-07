@@ -94,7 +94,8 @@
       "type": "cloud",
       "label": "MLflow",
       "stage": 1,
-      "row": 0
+      "row": 0,
+      "tag": "训练迭代管理"
     },
     {
       "id": "fs",
@@ -335,7 +336,7 @@
       "dot": "cyan",
       "title": "模型交付主链",
       "items": [
-        "DS GitLab 实验代码经 MLflow 进入 Model Experiment，Run 在 Ray 集群分布式执行",
+        "DS GitLab 实验代码经 MLflow（训练迭代管理：Run 对比 / 指标 / 模型版本）进入 Model Experiment，Run 在 Ray 集群分布式执行",
         "产物 / 指标 / 日志统一落 S3，Run SUCCESS 后注册 Build 并发布为在线推理服务"
       ]
     },
@@ -353,7 +354,8 @@
       "title": "平台边界",
       "items": [
         "上游数据准备（Flink 写 HBase、Hive 入湖）不属本平台",
-        "训练数据为有权限的任意 Hive 表；Experiment 首个节点 Datasource 将其装载至 S3 供 Ray 读取"
+        "训练数据为有权限的任意 Hive 表；Experiment 首个节点 Datasource 将其装载至 S3 供 Ray 读取",
+        "MLflow 为内部基建（Managed Service）：Artifact Store 复用平台 S3；模型部署不经 MLflow serving"
       ]
     }
   ]

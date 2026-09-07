@@ -20,7 +20,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | **AI Hub** | LLM Mgmt | Placeholder | AI 资产统一管理（线上为 (new) LLM Management / LLM Model / LLM Provider，目标收敛为此） |
 | | Skill Market | Placeholder | Skill 资产市场 |
 | | Knowledge Base | Placeholder | 知识库 |
-| **Model Platform** | MLFlow | Placeholder | 连接 DS GitLab 与 Aimos 平台的桥梁 |
+| **Model Platform** | MLFlow | ✅ 静态示意原型 | 内部改造并嵌入的开源 MLflow：训练迭代管理（Run 对比 / 指标 / Artifact / 模型版本），以平台 MLFlow 页签内嵌其 UI |
 | | Model Mgmt | ✅ 原型已覆盖 | 模型逻辑实体（Model + Version）管理：状态驱动 Action、Build 明细页；规格见 docs/model-mgmt/spec.md |
 | | Model Experiment | ✅ 原型已覆盖 | 原 Model Train 改名；训练任务全生命周期（来自 ModelExperiment 仓库） |
 | | Model Deployment | Placeholder | 部署训练产物为在线服务 |
@@ -45,8 +45,8 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
   └──────────────────────────────┬─────────────────────────────────────┘
                                  │ AI 资产
   ┌───────────────┐   ┌──────────▼───────────┐   ┌────────────────────┐
-  │  DS GitLab    │──▶│ Model Platform        │──▶│ Online Runtime      │
-  │  (算法工程仓)  │   │ MLFlow（同步桥梁）      │   │ Orches Service      │
+                      │  DS GitLab    │──▶│ Model Platform        │──▶│ Online Runtime      │
+                      │  (算法工程仓)  │   │ MLFlow（训练迭代管理）  │   │ Orches Service      │
   └───────────────┘   │ Model Mgmt（逻辑容器）  │   │ LLM Workflow        │
                       │ Model Experiment（训练）│   │ Agent App（预留）    │
                       │ Model Deployment（部署）│   └─────────┬──────────┘
@@ -61,7 +61,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
   └─────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Model Platform 链路**：DS GitLab（算法工程仓）→ MLFlow（实验产物同步）→ Model Experiment（训练，Ray 执行，产物回传 S3 并注册）→ Model Mgmt（Model / ModelVersion / Build 登记）→ Model Deployment（发布上线）。
+- **Model Platform 链路**：DS GitLab（算法工程仓）→ MLFlow（内部改造嵌入的开源 MLflow，训练迭代管理：Run 对比 / 指标 / Artifact / 模型版本）→ Model Experiment（训练编排，Ray 执行，产物回传 S3 并注册）→ Model Mgmt（Model / ModelVersion / Build 登记）→ Model Deployment（发布上线）。
 - **Feature Store 链路**：DataSource → FeatureSource → Transformation → FeatureGroup（离在线一致性保障层）→ FeatureMap（检索文档）/ Wide Table（离线宽表，Point-in-Time Join）。
 - **Online Runtime**：承载传统模型实时服务（Orches Service）、AI Workflow，以及未来的 Agent App。
 - 详见 [docs/platform/architecture.md](docs/platform/architecture.md) 与各模块文档索引。
@@ -76,6 +76,7 @@ Aimos MLOps/
 │   ├── feature-store/             # Feature Store 原型（Vite + React，来自 FeatureStore 仓库）
 │   │                              #   hash 路由：#/ds #/fs #/tf #/fg #/fm #/wt（#/arch 已并入平台架构图册）
 │   └── model-experiment/          # Model Experiment 原型（Vite + React，来自 ModelExperiment 仓库）
+│   └── mlflow/                    # Model Platform / MLFlow 原型（静态示意：内部改造版 MLflow UI，无构建无交互）
 │   └── user-mgmt/                 # Console / User 原型（纯静态 HTML/CSS/JS，无构建）
 │   └── alert-group/               # Console / Alert Group 原型（纯静态，无构建）
 │   └── architecture/              # 平台架构图册（archify 生成交互图 + 嵌入页，纯静态，无构建）

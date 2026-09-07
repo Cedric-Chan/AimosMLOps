@@ -5097,14 +5097,15 @@
           <text data-node-label="" x="100" y="263" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Kafka</text>
         </g>
 
-        <g id="node-mlflow" data-node-id="mlflow" data-node-label="MLflow" tabindex="0" role="button" aria-label="聚焦MLflow，02 / 特征生产" aria-pressed="false" data-node-kind="cloud" data-node-context="02 / 特征生产">
-          <title>MLflow · 02 / 特征生产</title>
+        <g id="node-mlflow" data-node-id="mlflow" data-node-label="MLflow" tabindex="0" role="button" aria-label="聚焦MLflow，02 / 特征生产" aria-pressed="false" data-node-kind="cloud" data-node-tag="训练迭代管理" data-node-context="02 / 特征生产">
+          <title>MLflow · 02 / 特征生产 · 训练迭代管理</title>
           <rect x="259" y="128" width="112" height="58" rx="6" class="c-mask"/>
           <rect x="259" y="128" width="112" height="58" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(265 134) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
           <text data-node-label="" x="315" y="149" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">MLflow</text>
+        <text data-detail="fine" x="315" y="175" class="t-cloud" font-size="7" text-anchor="middle">训练迭代管理</text>
         </g>
 
         <g id="node-fs" data-node-id="fs" data-node-label="Feature Store" tabindex="0" role="button" aria-label="聚焦Feature Store，02 / 特征生产" aria-pressed="false" data-node-kind="backend" data-node-tag="离在线一致性" data-node-context="02 / 特征生产">
@@ -5498,7 +5499,7 @@
           <h3>模型交付主链</h3>
         </div>
         <ul>
-          <li>&bull; DS GitLab 实验代码经 MLflow 进入 Model Experiment，Run 在 Ray 集群分布式执行</li>
+          <li>&bull; DS GitLab 实验代码经 MLflow（训练迭代管理：Run 对比 / 指标 / 模型版本）进入 Model Experiment，Run 在 Ray 集群分布式执行</li>
           <li>&bull; 产物 / 指标 / 日志统一落 S3，Run SUCCESS 后注册 Build 并发布为在线推理服务</li>
         </ul>
       </div>
@@ -5523,6 +5524,7 @@
         <ul>
           <li>&bull; 上游数据准备（Flink 写 HBase、Hive 入湖）不属本平台</li>
           <li>&bull; 训练数据为有权限的任意 Hive 表；Experiment 首个节点 Datasource 将其装载至 S3 供 Ray 读取</li>
+          <li>&bull; MLflow 为内部基建（Managed Service）：Artifact Store 复用平台 S3；模型部署不经 MLflow serving</li>
         </ul>
       </div>
     </div>

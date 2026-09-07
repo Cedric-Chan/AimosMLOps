@@ -6,7 +6,7 @@
 
 - **模型逻辑实体 = (Name, Version)**，二者组合唯一；这是 Create/Edit 操作的对象。
 - 元信息：Region、Product、Biz Team、Owner[]（多选）、Description。
-- **Model Status** 两态（原型范围内）：`Deployed`（可 Edit / Build / Deprecate）/ `Deprecate`（仅 View）。
+- **Model Status（已确认状态链，2026-09-07）**：`Draft → Deployed → Offline`——Draft 为新建初始态，Offline 取代原 Deprecate 命名；按粗粒度三态流转，逐状态操作矩阵不做过度设计。原型当前仍为 `Deployed / Deprecate` 两态，待随状态链对齐。
 - **View → Build Detail**：展示某个 Build 的部署明细，页面标题为「Model Deployment」——Build 即部署单元，与 Model Deployment 模块上下游衔接。
 
 ## 2. 列表页交互
@@ -45,7 +45,7 @@
 
 ## 5. 待细化问题
 
-- 新建模型的初始状态（原型给 Deployed；真实领域里新逻辑实体应无 Build，是否引入 `Draft` 态）。
+- ~~新建模型的初始状态~~：已确认引入 Draft 初始态，状态链 Draft → Deployed → Offline（见 §1）。
 - Owner → Biz Team 推导的真实来源（User 模块的 Team 角色，而非本原型的静态映射）。
 - Build 详情与 Model Deployment / Online Runtime 的状态同步口径。
-- Deprecate 前置校验（是否要求先下线所有 Online Build）。
+- Offline 前置校验（是否要求先下线所有 Online Build）与状态链在原型中的对齐（低优先）。

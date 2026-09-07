@@ -120,7 +120,7 @@
       "id": "mlflow",
       "type": "cloud",
       "label": "MLflow",
-      "sublabel": "实验产物同步桥梁",
+      "sublabel": "训练迭代管理 · 嵌入 UI",
       "pos": [
         250,
         262
@@ -128,7 +128,8 @@
       "size": [
         165,
         72
-      ]
+      ],
+      "tag": "Tracking + Registry"
     },
     {
       "id": "mgmt",
@@ -417,8 +418,8 @@
       "dot": "cyan",
       "title": "模型链路",
       "items": [
-        "DS GitLab 实验代码经 MLflow 同步进入 Model Experiment",
-        "Experiment / Run 与 MLflow Experiment / Parent Run 1:1 映射，产物统一存 S3"
+        "DS GitLab 实验代码经 MLflow 接入 Model Experiment；MLflow（内部改造嵌入）承担训练迭代管理",
+        "Experiment / Run 与 MLflow 1:1 映射；Artifact Store 复用平台 S3，部署不经 MLflow serving"
       ]
     },
     {
