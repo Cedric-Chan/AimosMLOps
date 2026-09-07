@@ -26,10 +26,11 @@ const FE_APP = 'apps/feature-entity/index.html';
 const FT_APP = 'apps/feature-tag/index.html';
 const MM_APP = 'apps/model-mgmt/index.html';
 const MLFLOW_APP = 'apps/mlflow/index.html';
+const MD_APP = 'apps/model-deployment/index.html';
 
 /* 应用缓存版本号：改动任一原型 app 后递增，强制浏览器刷新 iframe 里的 index.html
  * （应用的 index.html 被缓存而 assets 哈希已换时会出现空白页面） */
-const APPS_VERSION = '20260904d';
+const APPS_VERSION = '20260907a';
 const ARCH_APP = 'apps/architecture/index.html';
 
 const NAV = [
@@ -82,10 +83,8 @@ const NAV = [
         desc: '模型逻辑实体管理原型：Model + Version 唯一；Create/Edit 维护元信息（Owner 多选联动 Biz Team）；Build 触发部署构建；View 查看 Build 部署明细（Model Info / Build Info / Input-Output Parameter）。' },
       { id: 'model-experiment', label: 'Model Experiment', type: 'iframe', app: ME_APP,
         desc: '由 ModelExperiment 仓库原型覆盖：训练任务全生命周期（任务配置 → 调度执行 → Pipeline → 评估 → 归档 → 注册）。' },
-      { id: 'model-deployment', label: 'Model Deployment', type: 'placeholder',
-        desc: '部署模型训练产物（Build）为在线推理服务的地方，向下对接 Online Runtime。原型待设计。',
-        notes: ['对应线上平台 Model Platform / Model Deployment 页面', '待补充：部署表单、实例列表、发布与回滚'],
-        doc: `${GITHUB_BASE}/docs/platform/module-inventory.md` },
+      { id: 'model-deployment', label: 'Model Deployment', type: 'iframe', app: MD_APP,
+        desc: '部署 Build 为在线推理服务：Deploy 表单（Model/Region/Env/DeployType）；状态链 Deploying → Deployed / Failed → Offline；View 部署明细（Model Info / Build Info / Input-Output Param）；Test Run 手工试跑；Redeploy 仅 Failed；Monitor / Logs 跳外部系统（mock）；Offline 需 popconfirm 二次确认。' },
     ],
   },
   {

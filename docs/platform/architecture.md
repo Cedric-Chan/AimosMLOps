@@ -68,7 +68,7 @@ Experiment（DRAFT → ENABLED ⇄ DISABLED）                    ← 训练编�
 | 实验 / 执行 | Experiment 三态、Run 六态、调度与队列 | [model-experiment/GLOSSARY.md](../model-experiment/GLOSSARY.md) |
 | MLflow 映射 | Experiment / Run / 节点 ↔ MLflow 实体，Build ↔ Registry 版本 | [model-experiment/architecture/mlflow-integration.md](../model-experiment/architecture/mlflow-integration.md) |
 | 模型资产登记 | Model / ModelVersion / Build、Model Status 与 Action 矩阵 | [model-mgmt/spec.md](../model-mgmt/spec.md) |
-| 部署上线 | Build Detail（部署明细页）、Deployment Status | [model-mgmt/spec.md](../model-mgmt/spec.md) §4；Model Deployment 模块本体待设计 |
+| 部署上线 | Deployment Status（Deploying → Deployed / Failed → Offline）、Action 门控 | [model-deployment/spec.md](../model-deployment/spec.md)；Build 明细页见 [model-mgmt/spec.md](../model-mgmt/spec.md) §4 |
 | 在线服务 | Orches Service 服务生命周期 | 待设计（Placeholder） |
 
 ### 全生命周期模糊点（2026-09 review）
@@ -91,7 +91,7 @@ Registered Model 命名与 ModelVersion 层级对齐、Registry Alias 与部署�
 
 **C. 跨模块断点（平台级）**
 
-1. Model Deployment 模块未设计（部署表单 / 实例列表 / 发布与回滚）——生命周期最大缺口。
+1. ~~Model Deployment 模块未设计~~：原型 `apps/model-deployment/` 已覆盖（部署列表 / Deploy 表单 / Redeploy 重发 / Offline 下线），见 [model-deployment/spec.md](../model-deployment/spec.md)。
 2. 两个"Build"动词边界：Model Mgmt 的 Build action（触发部署构建流水线）与 Model Deployment 的"发布 Build"，谁是构建、谁是发布需明确定义；且 Model Mgmt 的 Build Detail 页标题就叫「Model Deployment」，存在认知混淆。
 3. Online Runtime / Orches Service 未设计：Build 上线后的服务生命周期（启动 / 扩缩 / 下线）与模型生命周期衔接。
 4. 监控与再训练回流缺失：上线后效果监控（AUC 漂移 / PSI）与再训练触发无承载模块，当前生命周期为开环。

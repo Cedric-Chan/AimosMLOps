@@ -27,7 +27,7 @@
 | MLFlow | ✅ | 内部改造并嵌入的开源 MLflow，承担训练迭代管理（Tracking + Registry）：Run 对比 / 指标曲线 / Artifact 浏览 / 模型版本 lineage，并以平台 MLFlow 页签内嵌其 UI。原型 `apps/mlflow/`（静态示意，无交互），集成设计见 [model-experiment/architecture/mlflow-integration.md](../model-experiment/architecture/mlflow-integration.md) | 真实嵌入联调（SSO / 权限打通）、Run 详情"在 MLflow 中查看"跳转、Registry Alias 与 Build 状态联动口径（见该文档 §8 待确认） |
 | Model Mgmt | ✅ | 模型逻辑实体管理（Name+Version 唯一；状态链已确认 Draft → Deployed → Offline；View=Build 部署明细页）。原型 `apps/model-mgmt/`（仍为 Deployed/Deprecate 两态待对齐），规格见 [model-mgmt/spec.md](../model-mgmt/spec.md) | Owner→Biz Team 真实来源、Offline 前置校验、状态链原型对齐 |
 | Model Experiment | ✅ | 原「Model Train」改名；训练任务全生命周期：任务配置 → 调度执行 → Pipeline → 评估 → 归档 → 注册。原型来自 ModelExperiment 仓库 | 原型已对齐 GitPages PRD；持续迭代中 |
-| Model Deployment | 🟡 | 部署训练产物（Build）为在线推理服务 | 部署表单、实例列表、发布与回滚 |
+| Model Deployment | ✅ | 发布 Build 为在线推理服务：Deploy 表单（Model/Region/Env/DeployType）；状态链 Deploying → Deployed / Failed → Offline；Action 门控（Redeploy 仅 Failed、Offline 仅 Deployed + popconfirm）；View 部署明细（与 Model Mgmt Build Detail 同构）；Test Run 试跑；Monitor / Logs 外部系统整页 mock。原型 `apps/model-deployment/`，规格见 [model-deployment/spec.md](../model-deployment/spec.md) | DeployType 枚举来源、Offline 前置校验、状态回写 Model Mgmt 口径 |
 
 ## Feature Store
 

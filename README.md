@@ -23,7 +23,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | **Model Platform** | MLFlow | ✅ 静态示意原型 | 内部改造并嵌入的开源 MLflow：训练迭代管理（Run 对比 / 指标 / Artifact / 模型版本），以平台 MLFlow 页签内嵌其 UI |
 | | Model Mgmt | ✅ 原型已覆盖 | 模型逻辑实体（Model + Version）管理：状态驱动 Action、Build 明细页；规格见 docs/model-mgmt/spec.md |
 | | Model Experiment | ✅ 原型已覆盖 | 原 Model Train 改名；训练任务全生命周期（来自 ModelExperiment 仓库） |
-| | Model Deployment | Placeholder | 部署训练产物为在线服务 |
+| | Model Deployment | ✅ 原型已覆盖 | 发布 Build 为在线推理服务：Deploy / 状态门控 Action（Redeploy 仅 Failed、Offline 仅 Deployed）、Test Run 试跑、Monitor / Logs 外部系统 mock；规格见 docs/model-deployment/spec.md |
 | **Feature Store** | Data Source | ✅ 原型已覆盖 | 数据源接入与映射 |
 | | Feature Source | ✅ 原型已覆盖 | 特征源定义 |
 | | Transformation | ✅ 原型已覆盖 | 特征转换加工 |
