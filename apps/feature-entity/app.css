@@ -39,7 +39,7 @@ input[type="text"], select, textarea {
 input[type="text"] { height: 32px; width: 230px; }
 select { height: 32px; min-width: 170px; }
 textarea { padding: 8px 11px; resize: vertical; line-height: 1.6; }
-input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(15,191,191,.12); }
+input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(19,194,194,.12); }
 input::placeholder, textarea::placeholder { color: #bfbfbf; }
 
 /* ---------- 按钮 ---------- */
@@ -143,3 +143,15 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 }
 .toast.error { border-left-color: var(--danger); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- 平台统一微调（ui-ux-pro-max revamp 2026-09-07） ----------
+ * 主色对齐 React 应用 token #13c2c2；补齐 skill 清单项：
+ * 行 hover 高亮 / 卡片轻投影 / 键盘焦点可见 / 150ms 过渡 */
+:root { --teal: #13c2c2; --teal-hover: #36cfc9; }
+.card { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+table tbody tr { transition: background-color 0.15s ease; }
+table tbody tr:hover td { background: #f5fbfb; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid rgba(19, 194, 194, 0.55);
+  outline-offset: 2px;
+}
