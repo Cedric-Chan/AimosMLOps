@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MLFlow · Aimos</title>
+  <style>
+    /* 内部改造版 MLflow UI 静态示意（placeholder，无交互）
+     * 还原线上截图：深蓝顶栏 + 左侧 Experiments 列表 + Runs 表格（Runs / Evaluation / Traces 页签）
+     * 注意：不用 <aside> 标签——平台壳会向 iframe 注入 aside{display:none} 隐藏原型自带侧边栏 */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bar: #141822;            /* 顶栏深蓝 */
+      --bar-text: #d7dce5;
+      --bar-active: #fff;
+      --brand: #0f5bd1;          /* MLflow 链接蓝 */
+      --bg: #f9fafb;
+      --panel: #fff;
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --text-sub: #6b7280;
+      --text-faint: #9ca3af;
+      --green: #16a34a;
+      --red: #dc2626;
+      --blue: #2563eb;
+    }
+
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ===== 顶部导航栏 ===== */
+    .topbar {
+      flex: none;
+      height: 48px;
+      background: var(--bar);
+      color: var(--bar-text);
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 0 18px;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand svg { display: block; }
+    .brand .word { font-size: 17px; font-weight: 600; letter-spacing: 0.2px; color: #fff; }
+    .brand .ver {
+      font-size: 10px; padding: 1px 7px; border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.25); color: #aeb7c6; white-space: nowrap;
+    }
+    .topnav { display: flex; gap: 4px; height: 100%; }
+    .topnav a {
+      display: flex; align-items: center; padding: 0 13px;
+      color: var(--bar-text); text-decoration: none; font-size: 13px;
+      border-bottom: 2px solid transparent;
+    }
+    .topnav a:hover { color: #fff; }
+    .topnav a.active { color: var(--bar-active); font-weight: 600; border-bottom-color: var(--brand); }
+
+    .top-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+    .top-right .icon-btn {
+      background: none; border: none; color: var(--bar-text); cursor: default;
+      display: flex; align-items: center; padding: 4px;
+    }
+    .top-right .icon-btn:hover { color: #fff; }
+    .top-right a { color: var(--bar-text); text-decoration: none; font-size: 12.5px; }
+    .top-right a:hover { color: #fff; }
+
+    /* ===== 主体：左 Experiments 列表 + 右内容 ===== */
+    .layout { flex: 1; min-height: 0; display: flex; }
+
+    .experiments {
+      flex: none; width: 248px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    .exp-head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 14px 6px;
+    }
+    .exp-head b { font-size: 13px; font-weight: 600; }
+    .exp-head .icon-btn {
+      margin-left: auto; display: flex; gap: 10px;
+      background: none; border: none; color: var(--text-sub); cursor: default;
+    }
+    .exp-search { padding: 6px 14px 10px; }
+    .exp-search input {
+      width: 100%; padding: 6px 10px; font: inherit;
+      border: 1px solid var(--border); border-radius: 6px; color: var(--text-sub);
+      background: var(--bg);
+    }
+    .exp-list { overflow-y: auto; padding: 2px 8px 16px; }
+    .exp-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 6px; cursor: default;
+      color: var(--text-sub);
+    }
+    .exp-item:hover { background: #f3f4f6; color: var(--text); }
+    .exp-item.active { background: rgba(15, 91, 209, 0.08); color: var(--text); font-weight: 600; }
+    .exp-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .exp-item .count { font-size: 11px; color: var(--text-faint); }
+    .exp-item .pin { color: var(--text-faint); }
+
+    /* ===== 右侧内容区 ===== */
+    .content { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--panel); }
+
+    .crumb-bar { padding: 14px 22px 0; }
+    .crumb-bar .path { font-size: 14px; color: var(--text-faint); }
+    .crumb-bar .path b { color: var(--text); font-weight: 600; }
+
+    .tabs { display: flex; gap: 2px; padding: 10px 22px 0; border-bottom: 1px solid var(--border); }
+    .tabs a {
+      padding: 8px 14px; text-decoration: none; font-size: 13px;
+      color: var(--text-sub); border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tabs a.active { color: var(--brand); font-weight: 600; border-bottom-color: var(--brand); }
+
+    .toolbar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 12px 22px;
+    }
+    .toolbar .search { flex: 1; min-width: 200px; max-width: 420px; position: relative; }
+    .toolbar .search input {
+      width: 100%; padding: 6px 10px 6px 30px; font: inherit;
+      border: 1px solid var(--border); border-radius: 6px; color: var(--text-sub);
+    }
+    .toolbar .search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text-faint); }
+    .toolbar select {
+      font: inherit; color: var(--text-sub);
+      padding: 6px 26px 6px 10px; border: 1px solid var(--border); border-radius: 6px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7280' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 9px center;
+      appearance: none; cursor: default;
+    }
+    .toolbar .ghost-btn {
+      font: inherit; color: var(--text-sub); background: #fff;
+      border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; cursor: default;
+    }
+    .toolbar .new-run {
+      margin-left: auto; font: inherit; font-weight: 600; color: #fff;
+      background: var(--bar); border: none; border-radius: 6px; padding: 7px 16px; cursor: default;
+    }
+
+    /* ===== Runs 表格 ===== */
+    .table-wrap { flex: 1; min-height: 0; overflow: auto; padding: 0 22px 30px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      position: sticky; top: 0; background: var(--panel);
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;
+      color: var(--text-faint); text-align: left;
+      padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    tbody td {
+      padding: 11px 10px; border-bottom: 1px solid #f0f1f3;
+      color: var(--text-sub); white-space: nowrap; vertical-align: middle;
+    }
+    tbody tr:hover td { background: #fafbfc; }
+    td.run-name { color: var(--text); }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 9px; vertical-align: 0; }
+    .d1 { background: #1f77b4; } .d2 { background: #ff7f0e; } .d3 { background: #2ca02c; }
+    .d4 { background: #9467bd; } .d5 { background: #d62728; } .d6 { background: #8c564b; }
+    .run-link { color: var(--brand); text-decoration: none; font-weight: 500; }
+    .state { font-size: 11px; margin-right: 7px; }
+    .state.ok { color: var(--green); } .state.fail { color: var(--red); } .state.run { color: var(--blue); }
+    .model-link { color: var(--brand); text-decoration: none; }
+    .model-link + .model-link { margin-left: 10px; }
+    .src code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px; color: var(--text-sub); background: #f3f4f6;
+      border-radius: 4px; padding: 2px 6px;
+    }
+    .faint { color: var(--text-faint); }
+
+    /* 主题切换占位（顶栏右侧第一项） */
+    .switch {
+      width: 30px; height: 16px; border-radius: 999px; background: #3a4152;
+      position: relative; cursor: default;
+    }
+    .switch::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 12px; height: 12px; border-radius: 50%; background: #cfd6e2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶栏：logo / 版本 / 全局导航 / 右侧操作（对齐内部改造版截图） -->
+  <div class="topbar">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="12" width="4" height="9" rx="1" fill="#5c9dff"/>
+        <rect x="10" y="7" width="4" height="14" rx="1" fill="#3d7ee0"/>
+        <rect x="17" y="3" width="4" height="18" rx="1" fill="#1f5fd0"/>
+      </svg>
+      <span class="word">mlflow</span>
+      <span class="ver">2.21.3-int</span>
+    </div>
+    <nav class="topnav">
+      <a class="active" href="#">Experiments</a>
+      <a href="#">Models</a>
+      <a href="#">Prompts</a>
+    </nav>
+    <div class="top-right">
+      <span class="switch" title="Theme"></span>
+      <button class="icon-btn" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <a href="#">GitHub</a>
+      <a href="#">Docs</a>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- 左侧 Experiments 列表（div 而非 aside，避免被平台壳隐藏） -->
+    <div class="experiments">
+      <div class="exp-head">
+        <b>Experiments</b>
+        <span class="icon-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </span>
+      </div>
+      <div class="exp-search"><input type="text" placeholder="Search"></div>
+      <div class="exp-list">
+        <div class="exp-item"><span class="name">Default</span><span class="count">0</span></div>
+        <div class="exp-item active">
+          <span class="name">risk-credit-scoring</span><span class="count">38</span>
+          <span class="pin">▾</span>
+        </div>
+        <div class="exp-item"><span class="name">risk-fraud-detection</span><span class="count">12</span></div>
+        <div class="exp-item"><span class="name">risk-collections</span><span class="count">7</span></div>
+        <div class="exp-item"><span class="name">marketing-uplift</span><span class="count">3</span></div>
+        <div class="exp-item"><span class="name">shared-woe-encoders</span><span class="count">5</span></div>
+      </div>
+    </div>
+
+    <!-- 右侧：Experiment 详情 / Runs 列表 -->
+    <div class="content">
+      <div class="crumb-bar"><div class="path">aimos / <b>risk-credit-scoring</b></div></div>
+
+      <div class="tabs">
+        <a class="active" href="#">Runs</a>
+        <a href="#">Evaluation</a>
+        <a href="#">Traces</a>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+          <input type="text" placeholder="Search">
+        </div>
+        <select><option>Time: All</option></select>
+        <select><option>State: All</option></select>
+        <select><option>Datasets: All</option></select>
+        <select><option>Sort by: Date desc</option></select>
+        <button class="ghost-btn">Columns</button>
+        <button class="ghost-btn">Group by</button>
+        <button class="new-run">New Run</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:28px"><input type="checkbox" disabled></th>
+              <th>Run Name</th>
+              <th>Created</th>
+              <th>Dataset</th>
+              <th>Duration</th>
+              <th>Source</th>
+              <th>Models</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox" disabled></td>
+              <td class="run-name"><span class="dot d1"></span><a class="run-link" href="#">credit_lgb_tune_v12</a></td>
+              <td>2026-09-03 16:41</td>
+              <td><a class="model-link" href="#">credit_train_wt_v7</a> <span class="faint">(v3)</span></td>
+              <td><span class="state ok">✓</span>18m 05s</td>
+              <td class="src"><code>gitlab:ds/risk-models@8f3a21c</code></td>
+              <td><a class="model-link" href="#">1 model · v9</a></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" disabled></td>
+              <td class="run-name"><span class="dot d2"></span><a class="run-link" href="#">credit_lgb_tune_v11</a></td>
+              <td>2026-09-02 11:08</td>
+              <td><a class="model-link" href="#">credit_train_wt_v7</a> <span class="faint">(v3)</span></td>
+              <td><span class="state ok">✓</span>17m 52s</td>
+              <td class="src"><code>gitlab:ds/risk-models@8f3a21c</code></td>
+              <td><a class="model-link" href="#">1 model · v8</a></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" disabled></td>
+              <td class="run-name"><span class="dot d3"></span><a class="run-link" href="#">credit_lgb_baseline_v10</a></td>
+              <td>2026-09-01 09:33</td>
+              <td><a class="model-link" href="#">credit_train_wt_v7</a> <span class="faint">(v3)</span></td>
+              <td><span class="state ok">✓</span>6m 14s</td>
+              <td class="src"><code>gitlab:ds/risk-models@b71c9de</code></td>
+              <td><a class="model-link" href="#">1 model · v7</a></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" disabled></td>
+              <td class="run-name"><span class="dot d4"></span><a class="run-link" href="#">fraud_xgb_woe_v22</a></td>
+              <td>2026-08-30 15:27</td>
+              <td><a class="model-link" href="#">fraud_train_wt_v2</a> <span class="faint">(v1)</span></td>
+              <td><span class="state ok">✓</span>24m 38s</td>
+              <td class="src"><code>gitlab:ds/fraud-models@d92f4aa</code></td>
+              <td><a class="model-link" href="#">model · v5</a><a class="model-link" href="#">model · v6</a></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" disabled></td>
+              <td class="run-name"><span class="dot d5"></span><a class="run-link" href="#">fraud_xgb_woe_v21</a></td>
+              <td>2026-08-29 10:02</td>
+              <td class="faint">—</td>
+              <td><span class="state fail">✗</span>4m 51s</td>
+              <td class="src"><code>gitlab:ds/fraud-models@d92f4aa</code></td>
+              <td class="faint">—</td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" disabled></td>
+              <td class="run-name"><span class="dot d6"></span><a class="run-link" href="#">collections_score_v4</a></td>
+              <td>2026-08-27 14:55</td>
+              <td><a class="model-link" href="#">coll_train_wt_v5</a> <span class="faint">(v2)</span></td>
+              <td><span class="state ok">✓</span>11m 26s</td>
+              <td class="src"><code>gitlab:ds/collections@4c8e0b2</code></td>
+              <td><a class="model-link" href="#">1 model · v2</a></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" disabled></td>
+              <td class="run-name"><span class="dot d1"></span><a class="run-link" href="#">collections_score_v3</a></td>
+              <td>2026-08-26 13:12</td>
+              <td><a class="model-link" href="#">coll_train_wt_v5</a> <span class="faint">(v2)</span></td>
+              <td><span class="state ok">✓</span>11m 03s</td>
+              <td class="src"><code>gitlab:ds/collections@4c8e0b2</code></td>
+              <td><a class="model-link" href="#">1 model · v1</a></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox" disabled></td>
+              <td class="run-name"><span class="dot d2"></span><a class="run-link" href="#">mega_calibrate_v2</a></td>
+              <td>2026-08-24 17:40</td>
+              <td><a class="model-link" href="#">mega_predict_train</a> <span class="faint">(v1)</span></td>
+              <td><span class="state run">◐</span>9m 12s</td>
+              <td class="src"><code>gitlab:ds/risk-models@8f3a21c</code></td>
+              <td class="faint">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aimos 平台架构图册</title>
+  <title>Aimos 平台架构</title>
   <style>
-    /* 平台壳内的架构图册页：Tab 切换 三张视图（架构总览 / 端到端数据流 / 说明与待确认） */
+    /* 平台壳内的架构页：导览 → 平台全景 → Feature Store 三段式故事结构 */
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -16,6 +16,9 @@
       --text-faint: #999;
       --border: #e8e8e8;
       --bg: #fff;
+      --ok: #52c41a;
+      --wip: #faad14;
+      --future: #722ed1;
     }
 
     html, body { height: 100%; }
@@ -54,139 +57,400 @@
     }
     .tab:hover { background: rgba(0, 0, 0, 0.045); color: var(--text); }
     .tab.active { background: rgba(15, 191, 191, 0.12); color: var(--teal-dark); font-weight: 600; }
+    .tab .seq { font-size: 11px; color: var(--text-faint); margin-right: 5px; }
+    .tab.active .seq { color: var(--teal-dark); }
 
     .arch-meta { margin-left: auto; color: var(--text-faint); font-size: 12px; white-space: nowrap; }
     .arch-meta a { color: var(--teal-dark); text-decoration: none; margin-left: 10px; }
     .arch-meta a:hover { text-decoration: underline; }
 
     .panes { flex: 1; min-height: 0; position: relative; }
-    .pane { position: absolute; inset: 0; display: none; }
-    .pane.active { display: block; }
-    .pane iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .pane { position: absolute; inset: 0; display: none; flex-direction: column; }
+    .pane.active { display: flex; }
 
-    /* 说明与待确认 */
-    .notes { overflow-y: auto; padding: 26px 32px 60px; }
-    .notes-inner { max-width: 860px; margin: 0 auto; }
-    .notes h1 { font-size: 20px; margin-bottom: 6px; }
-    .notes .lead { color: var(--text-sub); margin-bottom: 22px; line-height: 1.7; }
-    .notes h2 {
-      font-size: 14px;
-      margin: 26px 0 10px;
-      padding-bottom: 8px;
+    /* 图册页：视图切换条 + 懒加载 iframe */
+    .subbar {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
       border-bottom: 1px solid var(--border);
-      color: var(--text);
+      background: #fafafa;
     }
-    .notes ul { padding-left: 20px; line-height: 1.9; color: var(--text-sub); }
-    .notes li b { color: var(--text); font-weight: 600; }
-    .notes code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    .subbar .hint { color: var(--text-faint); font-size: 12px; margin-right: 4px; }
+    .subtab {
+      border: 1px solid var(--border);
+      background: #fff;
+      font: inherit;
       font-size: 12px;
-      background: rgba(0, 0, 0, 0.045);
-      border-radius: 4px;
-      padding: 1px 5px;
+      color: var(--text-sub);
+      padding: 4px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
     }
-    .chip {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--teal-dark);
+    .subtab:hover { color: var(--text); border-color: #ccc; }
+    .subtab.active { color: var(--teal-dark); border-color: var(--teal); background: rgba(15, 191, 191, 0.08); font-weight: 600; }
+    .frames { flex: 1; min-height: 0; position: relative; }
+    .frames .view { position: absolute; inset: 0; display: none; }
+    .frames .view.active { display: block; }
+    .frames iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+    /* ===== 导览页 ===== */
+    .guide { overflow-y: auto; padding: 34px 36px 70px; }
+    .guide-inner { max-width: 1020px; margin: 0 auto; }
+
+    .guide .hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .guide h1 { font-size: 24px; letter-spacing: 0.5px; }
+    .guide .lead { color: var(--text-sub); line-height: 1.8; margin-top: 8px; max-width: 640px; }
+    .guide .lead b { color: var(--text); }
+    .legend { flex: none; display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-sub); padding-top: 6px; }
+    .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+    .legend .ok i { background: var(--ok); }
+    .legend .wip i { background: var(--wip); }
+    .legend .future i { background: var(--future); }
+
+    .guide h2 {
+      font-size: 15px;
+      margin: 34px 0 4px;
+    }
+    .guide h2 .sub { font-size: 12px; font-weight: 400; color: var(--text-faint); margin-left: 10px; }
+
+    /* 端到端故事线 */
+    .story { display: flex; gap: 0; margin-top: 16px; }
+    .stage { flex: 1; position: relative; padding: 0 14px 0 0; }
+    .stage + .stage { padding-left: 18px; }
+    .stage::before { /* 连接线 */
+      content: "";
+      position: absolute; top: 15px; left: 34px; right: 8px;
+      border-top: 2px solid rgba(15, 191, 191, 0.35);
+    }
+    .stage:last-child::before { right: calc(100% - 42px); }
+    .stage .no {
+      position: relative; z-index: 1;
+      width: 32px; height: 32px; border-radius: 50%;
       background: rgba(15, 191, 191, 0.12);
-      border-radius: 4px;
-      padding: 2px 8px;
-      margin-left: 8px;
-      vertical-align: 2px;
+      color: var(--teal-dark);
+      font-weight: 700; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px rgba(15, 191, 191, 0.4);
+      margin-bottom: 10px;
     }
-    .warn-chip {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 600;
-      color: #d46b08;
-      background: #fff7e6;
-      border: 1px solid #ffd591;
-      border-radius: 4px;
-      padding: 1px 8px;
-      margin-left: 8px;
-      vertical-align: 2px;
+    .stage b { display: block; font-size: 13px; margin-bottom: 4px; }
+    .stage p { font-size: 12px; color: var(--text-sub); line-height: 1.75; }
+    .stage code { font-family: inherit; color: var(--teal-dark); font-size: 11px; }
+
+    /* 能力地图 */
+    .domains { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 16px; }
+    .domain {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 14px 12px;
+      display: flex; flex-direction: column;
     }
-    .footer-note { margin-top: 34px; color: var(--text-faint); font-size: 12px; }
+    .domain .dt { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
+    .domain .dt i { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+    .domain .dd { font-size: 11px; color: var(--text-faint); line-height: 1.6; margin-bottom: 10px; }
+    .domain ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .domain li { font-size: 12px; color: var(--text-sub); display: flex; align-items: center; gap: 7px; }
+    .domain li i { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--border); }
+    .domain li.s-ok i { background: var(--ok); }
+    .domain li.s-wip i { background: var(--wip); }
+    .domain li.s-future i { background: var(--future); }
+    .domain li span { min-width: 0; }
+
+    /* 关键机制 */
+    .mech { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .mech .card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .mech .card b { display: block; font-size: 13px; margin-bottom: 6px; }
+    .mech .card b i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+    .mech .card p { font-size: 12px; color: var(--text-sub); line-height: 1.8; }
+
+    /* 深入探索 */
+    .explore { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .explore button {
+      text-align: left; font: inherit; cursor: pointer;
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px 18px; background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .explore button:hover { border-color: var(--teal); box-shadow: 0 2px 10px rgba(15, 191, 191, 0.12); }
+    .explore b { display: block; font-size: 14px; margin-bottom: 5px; color: var(--teal-dark); }
+    .explore p { font-size: 12px; color: var(--text-sub); line-height: 1.7; }
+    .explore .go { float: right; color: var(--text-faint); }
+
+    /* 待确认 / 存疑(有内容才渲染) */
+    .pending { margin-top: 34px; border: 1px solid #ffd591; background: #fff7e6; border-radius: 10px; padding: 14px 18px; }
+    .pending h3 { font-size: 13px; color: #d46b08; margin-bottom: 8px; }
+    .pending ul { padding-left: 18px; }
+    .pending li { font-size: 12px; color: #874d00; line-height: 1.9; }
+
+    .footer-note { margin-top: 40px; color: var(--text-faint); font-size: 12px; line-height: 1.8; }
+    .footer-note a { color: var(--teal-dark); text-decoration: none; }
+    .footer-note a:hover { text-decoration: underline; }
+
+    @media (max-width: 900px) {
+      .guide { padding: 24px 18px 60px; }
+      .guide .hero { flex-direction: column; }
+      .story { flex-direction: column; }
+      .stage { padding: 0 0 6px !important; }
+      .stage::before { display: none; }
+      .domains { grid-template-columns: repeat(2, 1fr); }
+      .mech, .explore { grid-template-columns: 1fr; }
+      .arch-header { flex-wrap: wrap; gap: 8px; }
+      .arch-meta { margin-left: 0; }
+    }
   </style>
 </head>
 <body>
   <div class="arch-header">
     <div class="arch-title"><span class="crumb">Aimos Platform /</span>Architecture</div>
     <div class="tabs" id="tabs">
-      <button class="tab active" data-pane="overview">架构总览</button>
-      <button class="tab" data-pane="dataflow">端到端数据流</button>
-      <button class="tab" data-pane="fsarch">FS 架构</button>
-      <button class="tab" data-pane="fsflow">FS 数据流</button>
-      <button class="tab" data-pane="notes">说明与口径</button>
+      <button class="tab active" data-pane="guide"><span class="seq">01</span>平台导览</button>
+      <button class="tab" data-pane="platform"><span class="seq">02</span>平台全景</button>
+      <button class="tab" data-pane="fs"><span class="seq">03</span>Feature Store</button>
     </div>
     <div class="arch-meta">
-      <a href="platform-architecture.html" target="_blank" rel="noopener">总览 ↗</a>
-      <a href="platform-dataflow.html" target="_blank" rel="noopener">数据流 ↗</a>
-      <a href="featurestore-architecture.html" target="_blank" rel="noopener">FS 架构 ↗</a>
-      · archify 生成 · 源 <a href="https://github.com/Cedric-Chan/AimosMLOps/tree/main/docs/platform/diagrams" target="_blank" rel="noopener">docs/platform/diagrams</a>
+      <a href="#" id="openView" target="_blank" rel="noopener" hidden>新窗口打开 ↗</a>
+      <span id="metaSrc">archify 生成 · 源 <a href="https://github.com/Cedric-Chan/AimosMLOps/tree/main/docs/platform/diagrams" target="_blank" rel="noopener">docs/platform/diagrams</a></span>
     </div>
   </div>
 
   <div class="panes">
-    <div class="pane active" data-pane="overview">
-      <iframe src="platform-architecture.html?theme=light" title="Aimos 平台架构总览"></iframe>
-    </div>
-    <div class="pane" data-pane="dataflow">
-      <iframe src="platform-dataflow.html?theme=light" title="Aimos 端到端数据流"></iframe>
-    </div>
-    <div class="pane" data-pane="fsarch">
-      <iframe src="featurestore-architecture.html?theme=light" title="Feature Store 系统架构"></iframe>
-    </div>
-    <div class="pane" data-pane="fsflow">
-      <iframe src="featurestore-dataflow.html?theme=light" title="Feature Store 数据流"></iframe>
-    </div>
-    <div class="pane" data-pane="notes">
-      <div class="notes"><div class="notes-inner">
-        <h1>平台架构图册<span class="chip">archify 2.17</span></h1>
-        <p class="lead">
-          本图册由 <a href="https://github.com/tt-a1i/archify" target="_blank" rel="noopener">archify</a> 从平台文档梳理生成，共四张交互图：
-          <b>架构总览</b>与<b>端到端数据流</b>为平台级视图，<b>FS 架构</b>与<b>FS 数据流</b>为 Feature Store 模块视图（自 archify 2.6.0 旧图迁移重绘）。
-          图内支持主题切换、缩放、搜索（/）、角色视角（L）与导图（M）。规格源与完整说明见
-          <a href="https://github.com/Cedric-Chan/AimosMLOps/tree/main/docs/platform/diagrams" target="_blank" rel="noopener">docs/platform/diagrams</a>。
-        </p>
 
-        <h2>图纸与来源</h2>
-        <ul>
-          <li><b>架构总览</b> — <code>aimos-platform.architecture.json</code>，依据 <code>docs/platform/architecture.md</code> 模块分层与端到端关系。</li>
-          <li><b>端到端数据流</b> — <code>aimos-platform.dataflow.json</code>，覆盖数据与代码源 → 特征生产 → 模型训练 → 注册交付 → 在线服务五阶段。</li>
-          <li><b>FS 架构 / FS 数据流</b> — <code>featurestore.architecture.json</code>、<code>featurestore.dataflow.json</code>，依据《在线特征平台架构说明》五层架构、§8.1 资产流转与离在线双流；替代已删除的旧 <code>public/architecture</code> 资产。</li>
-        </ul>
+    <!-- 01 平台导览：架构故事与能力地图 -->
+    <div class="pane active" data-pane="guide">
+      <div class="guide"><div class="guide-inner">
+        <div class="hero">
+          <div>
+            <h1>Aimos 平台导览</h1>
+            <p class="lead">
+              <b>Monee 通用风控模型平台</b>——打通 <b>特征生产 → 模型训练 → 部署交付 → 在线服务 / AI 服务</b> 的端到端链路：
+              算法工程师在一个平台内完成取数、加工、训练、发布与实时服务，离在线特征一致性由 Feature Store 层保障。
+            </p>
+          </div>
+          <div class="legend">
+            <span class="ok"><i></i>原型已覆盖</span>
+            <span class="wip"><i></i>Placeholder 待设计</span>
+            <span class="future"><i></i>Future 预留</span>
+          </div>
+        </div>
 
-        <h2>口径确认<span class="chip">已确认 · 2026-09</span></h2>
-        <ul>
-          <li><b>训练数据物理路径</b>：训练数据为有权限的任意 Hive 表（含 WideTable 产物）；<b>Experiment 首个节点 Datasource 负责 Hive → S3 装载</b>，Ray 集群经 Ray Dataset 从 S3 读取执行（图：ray→s3 边标注 Datasource 装载 / 产物）。</li>
-          <li><b>AI Hub → Online Runtime</b>：LLM / Skill / KB 资产供给在线服务的链路<b>确认成立</b>（架构总览对应边）。</li>
-          <li><b>FeatureMap</b>：已入图——平台数据流的特征生产阶段（FG 发布自动同步）+ FS 两图（FG → FeatureMap 检索出口，<b>最细特征粒度</b>检索与 Feature Cart）。</li>
-          <li><b>旧 Feature Store 架构图</b>：archify 2.6.0 旧资产经 visual-check 验证不满足视口标准，已按当前文档用 2.17 重绘迁入本图册，旧文件与 FS 应用 <code>#/arch</code> 路由一并移除。</li>
-          <li><b>Console / Background Task</b>：维持现状——折叠为 Web Console 副标签；Background Task 为临时后台任务位，暂不细化。</li>
-        </ul>
+        <h2>端到端故事线<span class="sub">一个风控模型从数据到流量的旅程</span></h2>
+        <div class="story">
+          <div class="stage">
+            <div class="no">1</div>
+            <b>数据与代码源</b>
+            <p><code>DS GitLab</code> 算法工程仓提供实验代码与配置；有权限的 Hive 表（含 WideTable 产物）提供训练数据，由 Datasource 节点装载至 S3。</p>
+          </div>
+          <div class="stage">
+            <div class="no">2</div>
+            <b>特征生产</b>
+            <p>Feature Store 五层组装 <code>DataSource → FeatureSource → Transformation → FeatureGroup</code>，FG 发布自动同步 FeatureMap；离线出口 WideTable。</p>
+          </div>
+          <div class="stage">
+            <div class="no">3</div>
+            <b>模型训练</b>
+            <p>内部改造嵌入的 <code>MLflow</code> 承担训练迭代管理（Run 对比 / 指标 / 模型版本），与 Model Experiment 的 Experiment / Run 1:1 映射；Ray 集群执行，产物 / 日志 / 指标统一落 S3。</p>
+          </div>
+          <div class="stage">
+            <div class="no">4</div>
+            <b>注册与交付</b>
+            <p>训练产物登记为 <code>Model → ModelVersion → Build</code>，经 Model Deployment 发布为在线推理服务。</p>
+          </div>
+          <div class="stage">
+            <div class="no">5</div>
+            <b>在线服务</b>
+            <p>Online Runtime / Orches Service 承载实时推理；业务请求触发 FG Serving 在线特征检索，AI 资产经 AI Hub 供給 LLM Workflow。</p>
+          </div>
+        </div>
 
-        <div class="footer-note">Aimos MLOps 平台交互 Demo · 架构内容由 docs/platform/ 文档驱动，重新生成命令见仓库 docs/platform/architecture-diagrams.md</div>
+        <h2>能力地图<span class="sub">五大能力域 · 状态对齐 docs/platform/module-inventory.md</span></h2>
+        <div class="domains">
+          <div class="domain">
+            <div class="dt"><i style="background:#13c2c2"></i>特征链路</div>
+            <div class="dd">Feature Store · 离在线一致的特征生产</div>
+            <ul>
+              <li class="s-ok"><i></i><span>DataSource</span></li>
+              <li class="s-ok"><i></i><span>FeatureSource</span></li>
+              <li class="s-ok"><i></i><span>Transformation</span></li>
+              <li class="s-ok"><i></i><span>FeatureGroup</span></li>
+              <li class="s-ok"><i></i><span>FeatureMap</span></li>
+              <li class="s-ok"><i></i><span>WideTable</span></li>
+              <li class="s-ok"><i></i><span>Feature Entity / Tag</span></li>
+            </ul>
+          </div>
+          <div class="domain">
+            <div class="dt"><i style="background:#722ed1"></i>模型链路</div>
+            <div class="dd">Model Platform · 训练到上线的交付主链</div>
+            <ul>
+              <li class="s-ok"><i></i><span>MLflow · 训练迭代管理</span></li>
+              <li class="s-ok"><i></i><span>Model Experiment</span></li>
+              <li class="s-ok"><i></i><span>Model Mgmt</span></li>
+              <li class="s-wip"><i></i><span>Model Deployment</span></li>
+            </ul>
+          </div>
+          <div class="domain">
+            <div class="dt"><i style="background:#52c41a"></i>在线服务</div>
+            <div class="dd">Online Runtime · 实时推理与 AI 编排</div>
+            <ul>
+              <li class="s-wip"><i></i><span>Orches Service</span></li>
+              <li class="s-wip"><i></i><span>LLM Workflow</span></li>
+              <li class="s-future"><i></i><span>Agent App</span></li>
+            </ul>
+          </div>
+          <div class="domain">
+            <div class="dt"><i style="background:#eb2f96"></i>AI 服务</div>
+            <div class="dd">AI Hub · AI 资产统一管理</div>
+            <ul>
+              <li class="s-wip"><i></i><span>LLM Mgmt</span></li>
+              <li class="s-wip"><i></i><span>Skill Market</span></li>
+              <li class="s-wip"><i></i><span>Knowledge Base</span></li>
+            </ul>
+          </div>
+          <div class="domain">
+            <div class="dt"><i style="background:#fa8c16"></i>平台管理</div>
+            <div class="dd">Console · 治理与后台任务</div>
+            <ul>
+              <li class="s-ok"><i></i><span>User</span></li>
+              <li class="s-ok"><i></i><span>Alert Group</span></li>
+              <li class="s-wip"><i></i><span>Background Task</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <h2>关键机制<span class="sub">跨模块怎么咬合</span></h2>
+        <div class="mech">
+          <div class="card">
+            <b><i style="background:#13c2c2"></i>离在线一致性</b>
+            <p>FeatureGroup 绑定同一 Transformer Version 保障训练 / 服务同源加工，避免 Training / Serving Skew；训练经 WideTable Point-in-Time Join 取数。</p>
+          </div>
+          <div class="card">
+            <b><i style="background:#722ed1"></i>MLflow 1:1 映射</b>
+            <p>Experiment / Run / 画布节点与 MLflow Experiment / Parent Run / Nested Run 一一映射；MLflow（内部改造嵌入）承担训练迭代管理与模型版本 lineage，产物统一存 S3，实验可追溯。</p>
+          </div>
+          <div class="card">
+            <b><i style="background:#52c41a"></i>双特征流</b>
+            <p>离线流 Hive ODS → FS → WideTable 供训练；在线流 Kafka → HBase / Redis → FG Serving 供推理，同源分层、各自出口。</p>
+          </div>
+        </div>
+
+        <h2>深入探索<span class="sub">交互架构图（主题切换 / 缩放 / 搜索 / 导览视图）</span></h2>
+        <div class="explore">
+          <button data-goto="platform">
+            <span class="go">→</span>
+            <b>平台全景</b>
+            <p>架构总览（模型链路 / 特征链路 / AI 资产三个导览视图）+ 端到端数据流五阶段。</p>
+          </button>
+          <button data-goto="fs">
+            <span class="go">→</span>
+            <b>Feature Store 专题</b>
+            <p>FS 五层系统架构与五阶段数据流：离在线双出口、FeatureMap 检索、WideTable PIT 链路。</p>
+          </button>
+        </div>
+
+        <div class="pending" id="pendingBox" hidden>
+          <h3>待确认 / 存疑事项</h3>
+          <ul id="pendingList"></ul>
+        </div>
+
+        <div class="footer-note">
+          Aimos MLOps 平台交互 Demo · 架构内容由 docs/platform/ 文档驱动；已确认口径与交付回执属后台记录，见
+          <a href="https://github.com/Cedric-Chan/AimosMLOps/blob/main/docs/platform/architecture-diagrams.md" target="_blank" rel="noopener">architecture-diagrams.md</a>，重新生成命令同此文档。
+        </div>
       </div></div>
+    </div>
+
+    <!-- 02 平台全景 -->
+    <div class="pane" data-pane="platform">
+      <div class="subbar">
+        <span class="hint">视图</span>
+        <button class="subtab active" data-view="arch">架构总览</button>
+        <button class="subtab" data-view="flow">端到端数据流</button>
+      </div>
+      <div class="frames">
+        <div class="view active"><iframe data-src="platform-architecture.html?theme=light" title="Aimos 平台架构总览"></iframe></div>
+        <div class="view"><iframe data-src="platform-dataflow.html?theme=light" title="Aimos 端到端数据流"></iframe></div>
+      </div>
+    </div>
+
+    <!-- 03 Feature Store 专题 -->
+    <div class="pane" data-pane="fs">
+      <div class="subbar">
+        <span class="hint">视图</span>
+        <button class="subtab active" data-view="arch">系统架构</button>
+        <button class="subtab" data-view="flow">数据流</button>
+      </div>
+      <div class="frames">
+        <div class="view active"><iframe data-src="featurestore-architecture.html?theme=light" title="Feature Store 系统架构"></iframe></div>
+        <div class="view"><iframe data-src="featurestore-dataflow.html?theme=light" title="Feature Store 数据流"></iframe></div>
+      </div>
     </div>
   </div>
 
   <script>
-    // hash 路由：#overview / #dataflow / #fsarch / #fsflow / #notes，刷新后保持当前页签
+    // hash 路由：#guide / #platform[/arch|flow] / #fs[/arch|flow]；旧五页签 hash 兼容映射
+    const LEGACY = { overview: 'platform/arch', dataflow: 'platform/flow', fsarch: 'fs/arch', fsflow: 'fs/flow', notes: 'guide' };
+    const VIEWS = { // 每个页签的子视图 → iframe 产物（新窗口打开用）
+      'platform': { arch: 'platform-architecture.html', flow: 'platform-dataflow.html' },
+      'fs': { arch: 'featurestore-architecture.html', flow: 'featurestore-dataflow.html' },
+    };
+
     const tabs = document.querySelectorAll('.tab');
     const panes = document.querySelectorAll('.pane');
+    const openView = document.getElementById('openView');
+    const metaSrc = document.getElementById('metaSrc');
 
-    function activate(name) {
-      const valid = ['overview', 'dataflow', 'fsarch', 'fsflow', 'notes'].includes(name) ? name : 'overview';
-      tabs.forEach((t) => t.classList.toggle('active', t.dataset.pane === valid));
-      panes.forEach((p) => p.classList.toggle('active', p.dataset.pane === valid));
+    function activate(hash) {
+      let [tab, view] = (hash || '').replace(/^#/, '').split('/');
+      if (tab === 'overview' || LEGACY[tab]) { const m = LEGACY[tab]; if (m) { [tab, view] = m.split('/'); } }
+      if (!['guide', 'platform', 'fs'].includes(tab)) tab = 'guide';
+
+      tabs.forEach((t) => t.classList.toggle('active', t.dataset.pane === tab));
+      panes.forEach((p) => p.classList.toggle('active', p.dataset.pane === tab));
+
+      const pane = document.querySelector(`.pane[data-pane="${tab}"]`);
+      if (pane.querySelector('.subtab')) {
+        if (!['arch', 'flow'].includes(view)) view = 'arch';
+        pane.querySelectorAll('.subtab').forEach((s) => s.classList.toggle('active', s.dataset.view === view));
+        pane.querySelectorAll('.frames .view').forEach((v, i) => {
+          const on = (i === (view === 'arch' ? 0 : 1));
+          v.classList.toggle('active', on);
+          const f = v.querySelector('iframe');
+          if (on && f.dataset.src) { f.src = f.dataset.src; delete f.dataset.src; } // 懒加载：首次激活才载图
+        });
+        openView.hidden = false;
+        openView.href = VIEWS[tab][view];
+        metaSrc.hidden = true;
+      } else {
+        openView.hidden = true;
+        metaSrc.hidden = false;
+      }
     }
 
     tabs.forEach((t) => t.addEventListener('click', () => { location.hash = '#' + t.dataset.pane; }));
-    window.addEventListener('hashchange', () => activate((location.hash || '').replace(/^#/, '')));
-    activate((location.hash || '').replace(/^#/, ''));
+    document.querySelectorAll('.subtab').forEach((s) =>
+      s.addEventListener('click', () => {
+        location.hash = '#' + s.closest('.pane').dataset.pane + '/' + s.dataset.view;
+      }));
+    document.querySelectorAll('[data-goto]').forEach((b) =>
+      b.addEventListener('click', () => { location.hash = '#' + b.dataset.goto; }));
+    window.addEventListener('hashchange', () => activate(location.hash));
+    activate(location.hash);
+
+    // 待确认 / 存疑事项：有内容才展示（已确认口径属后台记录，不入此页）
+    const PENDING = [
+      'MLflow Registered Model 命名 <code>{model_name}_{region}</code> 与平台 ModelVersion 层级的对齐：同一 Model 的 v1/v2 共用一个 Registered Model，版本号两套体系并存，是否将 <code>_v{N}</code> 纳入命名待定（mlflow-integration.md §8-1）',
+      'MLflow Registry Alias（@production / @candidate）是否随 Model Deployment 发布 / 下线自动迁移；已定口径：Stage 不承载平台状态（§8-2）',
+      'Build 的 Deployment Status（Online）与 Model Deployment 模块状态的单一事实源；Model Mgmt「Build」动作与 Model Deployment「发布 Build」两个动词的边界',
+      '模型上线后的效果监控（AUC 漂移 / PSI）与再训练触发暂无承载模块，全生命周期当前为开环（platform/architecture.md §3）',
+    ];
+    if (PENDING.length) {
+      document.getElementById('pendingList').innerHTML = PENDING.map((s) => `<li>${s}</li>`).join('');
+      document.getElementById('pendingBox').hidden = false;
+    }
   </script>
 </body>
 </html>

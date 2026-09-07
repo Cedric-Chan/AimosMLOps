@@ -5107,15 +5107,16 @@
         <text data-detail="context" x="1240" y="158" class="t-muted" font-size="9" text-anchor="middle">产物 / 日志 / 指标</text>
         </g>
 
-        <g id="node-mlflow" data-node-id="mlflow" data-node-label="MLflow" tabindex="0" role="button" aria-label="聚焦MLflow，实验产物同步桥梁, Aimos 平台（Monee 通用风控模型平台）" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="实验产物同步桥梁" data-node-context="Aimos 平台（Monee 通用风控模型平台）">
-          <title>MLflow · 实验产物同步桥梁 · Aimos 平台（Monee 通用风控模型平台）</title>
+        <g id="node-mlflow" data-node-id="mlflow" data-node-label="MLflow" tabindex="0" role="button" aria-label="聚焦MLflow，训练迭代管理 · 嵌入 UI, Aimos 平台（Monee 通用风控模型平台）" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="训练迭代管理 · 嵌入 UI" data-node-tag="Tracking + Registry" data-node-context="Aimos 平台（Monee 通用风控模型平台）">
+          <title>MLflow · 训练迭代管理 · 嵌入 UI · Aimos 平台（Monee 通用风控模型平台） · Tracking + Registry</title>
           <rect x="250" y="262" width="165" height="72" rx="6" class="c-mask"/>
           <rect x="250" y="262" width="165" height="72" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(256 268) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="332.5" y="296" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">MLflow</text>
-        <text data-detail="context" x="332.5" y="312" class="t-muted" font-size="9" text-anchor="middle">实验产物同步桥梁</text>
+        <text data-detail="context" x="332.5" y="312" class="t-muted" font-size="9" text-anchor="middle">训练迭代管理 · 嵌入 UI</text>
+        <text data-detail="fine" x="332.5" y="326" class="t-cloud" font-size="7" text-anchor="middle">Tracking + Registry</text>
         </g>
 
         <g id="node-mgmt" data-node-id="mgmt" data-node-label="Model Mgmt" tabindex="0" role="button" aria-label="聚焦Model Mgmt，Model / Version / Build, Aimos 平台（Monee 通用风控模型平台）" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Model / Version / Build" data-node-context="Aimos 平台（Monee 通用风控模型平台）">
@@ -5498,8 +5499,8 @@
           <h3>模型链路</h3>
         </div>
         <ul>
-          <li>&bull; DS GitLab 实验代码经 MLflow 同步进入 Model Experiment</li>
-          <li>&bull; Experiment / Run 与 MLflow Experiment / Parent Run 1:1 映射，产物统一存 S3</li>
+          <li>&bull; DS GitLab 实验代码经 MLflow 接入 Model Experiment；MLflow（内部改造嵌入）承担训练迭代管理</li>
+          <li>&bull; Experiment / Run 与 MLflow 1:1 映射；Artifact Store 复用平台 S3，部署不经 MLflow serving</li>
         </ul>
       </div>
 
