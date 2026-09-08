@@ -211,6 +211,7 @@ function renderTeamDir() {
     x.className = 'tag-x';
     x.textContent = '✕';
     x.title = '删除该 Biz Team';
+    x.setAttribute('aria-label', `删除 Biz Team「${t}」`);
     x.addEventListener('click', () => confirmRemoveTeam(t, x));
     tag.appendChild(x);
     wrap.appendChild(tag);
