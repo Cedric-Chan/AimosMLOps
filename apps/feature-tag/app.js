@@ -133,7 +133,7 @@ function renderTable() {
     b.addEventListener('click', () => openTagModal('edit', b.dataset.category, b.dataset.tag)));
   tbody.querySelectorAll('.link-btn.delete').forEach(b =>
     b.addEventListener('click', () => {
-      openConfirm(`确认删除 Feature Tag「${b.dataset.tag}」（${b.dataset.category}）？已打该标签的特征将失去此标签。`, () => {
+      openConfirm(`确认删除 Feature Tag「${b.dataset.tag}」（${b.dataset.category}）？已打该标签的特征将失去此标签。`, b, () => {
         tags = tags.filter(t => !(t.category === b.dataset.category && t.tag === b.dataset.tag));
         saveRegistry();
         toast('Feature Tag deleted');
@@ -178,7 +178,7 @@ function renderCategoryDir() {
     x.className = 'tag-x';
     x.textContent = '✕';
     x.title = '删除该 Category';
-    x.addEventListener('click', () => confirmRemoveCategory(c));
+    x.addEventListener('click', () => confirmRemoveCategory(c, x));
     tag.appendChild(x);
     wrap.appendChild(tag);
   });
@@ -216,12 +216,13 @@ function renderCategoryDir() {
   wrap.appendChild(addBtn);
 }
 
-function confirmRemoveCategory(category) {
+function confirmRemoveCategory(category, anchor) {
   const count = tags.filter(t => t.category === category).length;
   openConfirm(
     count > 0
       ? `删除 Category「${category}」将同时移除其下 ${count} 个 Feature Tag，确认删除？`
       : `确认删除 Category「${category}」？`,
+    anchor,
     () => {
       categories = categories.filter(c => c !== category);
       tags = tags.filter(t => t.category !== category);
@@ -290,10 +291,42 @@ function submitTagModal() {
 
 /* ---------- 通用确认 ---------- */
 
-function openConfirm(text, fn) {
-  $('confirm-text').textContent = text;
-  state.confirmFn = fn;
-  $('confirm-modal').classList.remove('hidden');
+/* popconfirm：破坏性/确认操作统一交互（锚定触发按钮，Esc/点击外部关闭） */
+let popEl = null, popFn = null;
+function closePop() {
+  if (popEl) { popEl.remove(); popEl = null; }
+  document.removeEventListener('click', outsideClose);
+}
+function outsideClose(e) {
+  if (popEl && !popEl.contains(e.target)) closePop();
+}
+function openConfirm(text, anchor, fn, variant = 'danger') {
+  closePop();
+  popFn = fn;
+  popEl = document.createElement('div');
+  popEl.className = 'popconfirm';
+  const t = document.createElement('div');
+  t.className = 'pop-text';
+  t.textContent = text;
+  const acts = document.createElement('div');
+  acts.className = 'pop-actions';
+  const cancel = document.createElement('button');
+  cancel.className = 'pop-btn';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', closePop);
+  const ok = document.createElement('button');
+  ok.className = 'pop-btn' + (variant === 'primary' ? ' primary' : ' danger');
+  ok.textContent = 'OK';
+  ok.addEventListener('click', () => { const f = popFn; closePop(); if (f) f(); });
+  acts.append(cancel, ok);
+  popEl.append(t, acts);
+  document.body.appendChild(popEl);
+  const width = Math.min(280, window.innerWidth - 24);
+  const r = anchor.getBoundingClientRect();
+  popEl.style.width = width + 'px';
+  popEl.style.left = Math.max(12, Math.min(r.left, window.innerWidth - width - 12)) + 'px';
+  popEl.style.top = Math.min(r.bottom + 6, window.innerHeight - 110) + 'px';
+  setTimeout(() => document.addEventListener('click', outsideClose), 0);
 }
 
 /* ---------- 事件绑定 ---------- */
@@ -335,16 +368,10 @@ function bindEvents() {
 
   $('page-size').addEventListener('change', () => { state.pageSize = Number($('page-size').value); state.page = 1; render(); });
 
-  $('btn-confirm-cancel').addEventListener('click', () => $('confirm-modal').classList.add('hidden'));
-  $('btn-confirm-ok').addEventListener('click', () => {
-    $('confirm-modal').classList.add('hidden');
-    if (state.confirmFn) { state.confirmFn(); state.confirmFn = null; }
-  });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       $('tag-modal').classList.add('hidden');
-      $('confirm-modal').classList.add('hidden');
       $('category-dir-panel').classList.add('hidden');
     }
   });

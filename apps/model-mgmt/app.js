@@ -157,14 +157,12 @@ function renderTable() {
   tbody.querySelectorAll('[data-build]').forEach(b =>
     b.addEventListener('click', () => {
       const [name, version] = b.dataset.build.split('|');
-      openConfirm(`为「${name} ${version}」发起新 Build？将拉取最新模型产物执行部署流水线。`, () => {
-        toast(`Build request submitted for ${name} ${version} (mock)`);
-      });
+      openConfirm(`为「${name} ${version}」发起新 Build？将拉取最新模型产物执行部署流水线。`, b, () => { toast(`Build request submitted for ${name} ${version} (mock)`); }, 'primary');
     }));
   tbody.querySelectorAll('[data-deprecate]').forEach(b =>
     b.addEventListener('click', () => {
       const [name, version] = b.dataset.deprecate.split('|');
-      openConfirm(`确认下线（Deprecate）「${name} ${version}」？下线后仅可查看。`, () => {
+      openConfirm(`确认下线（Deprecate）「${name} ${version}」？下线后仅可查看。`, b, () => {
         const m = models.find(x => x.name === name && x.version === version);
         m.status = 'Deprecate';
         m.updated = nowStr();
@@ -386,10 +384,42 @@ function submitModelModal() {
 
 /* ---------- 通用确认 ---------- */
 
-function openConfirm(text, fn) {
-  $('confirm-text').textContent = text;
-  state.confirmFn = fn;
-  $('confirm-modal').classList.remove('hidden');
+/* popconfirm：破坏性/确认操作统一交互（锚定触发按钮，Esc/点击外部关闭） */
+let popEl = null, popFn = null;
+function closePop() {
+  if (popEl) { popEl.remove(); popEl = null; }
+  document.removeEventListener('click', outsideClose);
+}
+function outsideClose(e) {
+  if (popEl && !popEl.contains(e.target)) closePop();
+}
+function openConfirm(text, anchor, fn, variant = 'danger') {
+  closePop();
+  popFn = fn;
+  popEl = document.createElement('div');
+  popEl.className = 'popconfirm';
+  const t = document.createElement('div');
+  t.className = 'pop-text';
+  t.textContent = text;
+  const acts = document.createElement('div');
+  acts.className = 'pop-actions';
+  const cancel = document.createElement('button');
+  cancel.className = 'pop-btn';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', closePop);
+  const ok = document.createElement('button');
+  ok.className = 'pop-btn' + (variant === 'primary' ? ' primary' : ' danger');
+  ok.textContent = 'OK';
+  ok.addEventListener('click', () => { const f = popFn; closePop(); if (f) f(); });
+  acts.append(cancel, ok);
+  popEl.append(t, acts);
+  document.body.appendChild(popEl);
+  const width = Math.min(280, window.innerWidth - 24);
+  const r = anchor.getBoundingClientRect();
+  popEl.style.width = width + 'px';
+  popEl.style.left = Math.max(12, Math.min(r.left, window.innerWidth - width - 12)) + 'px';
+  popEl.style.top = Math.min(r.bottom + 6, window.innerHeight - 110) + 'px';
+  setTimeout(() => document.addEventListener('click', outsideClose), 0);
 }
 
 /* ---------- 事件绑定 ---------- */
@@ -456,16 +486,10 @@ function bindEvents() {
       else toast(text, 'info');
     }));
 
-  $('btn-confirm-cancel').addEventListener('click', () => $('confirm-modal').classList.add('hidden'));
-  $('btn-confirm-ok').addEventListener('click', () => {
-    $('confirm-modal').classList.add('hidden');
-    if (state.confirmFn) { state.confirmFn(); state.confirmFn = null; }
-  });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       $('model-modal').classList.add('hidden');
-      $('confirm-modal').classList.add('hidden');
     }
   });
 }
