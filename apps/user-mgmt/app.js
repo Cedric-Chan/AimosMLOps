@@ -148,7 +148,7 @@ function renderTable() {
   tbody.querySelectorAll('.link-btn.edit').forEach(btn =>
     btn.addEventListener('click', () => openUserModal('edit', btn.dataset.email, btn.dataset.team)));
   tbody.querySelectorAll('.link-btn.delete').forEach(btn =>
-    btn.addEventListener('click', () => confirmDelete(btn.dataset.email, btn.dataset.team)));
+    btn.addEventListener('click', () => confirmDelete(btn.dataset.email, btn.dataset.team, btn)));
 
   const end = Math.min(start + pageList.length, list.length);
   $('page-total').textContent = `${list.length === 0 ? 0 : start + 1}-${end} of ${list.length} items`;
@@ -329,8 +329,8 @@ function submitUserModal() {
   render();
 }
 
-function confirmDelete(email, team) {
-  openConfirm(`确认删除 ${email} 在「${team}」下的角色配置？`, btn, () => {
+function confirmDelete(email, team, anchor) {
+  openConfirm(`确认删除 ${email} 在「${team}」下的角色配置？`, anchor, () => {
     assignments = assignments.filter(a => !(a.email === email && a.team === team));
     toast('Role assignment deleted');
     render();
