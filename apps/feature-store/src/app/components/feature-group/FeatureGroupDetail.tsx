@@ -1278,6 +1278,7 @@ function VersionHistoryTab() {
   const [copied, setCopied] = useState<string | null>(null);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, VersionRow["status"]>>({});
   const [confirmOffline, setConfirmOffline] = useState<string | null>(null);
+  const [checking, setChecking] = useState<string | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 点击弹窗外部时收起 Offline popconfirm
@@ -1293,9 +1294,11 @@ function VersionHistoryTab() {
 
   // Offline 前的血缘校验（mock）：Used By 里仍有该 Version 的下游则拒止
   function runOffline(v: VersionRow) {
-    setConfirmOffline(null);
+    setChecking(v.version);
     const deps = MOCK_DOWNSTREAM.filter((d) => d.version === v.version);
     setTimeout(() => {
+      setChecking(null);
+      setConfirmOffline(null);
       if (deps.length > 0) {
         const names = [...new Set(deps.map((d) => d.assetName))].join(", ");
         toast.error(`Cannot offline ${v.version}: in use by ${names}. Unlink the downstream asset(s) first.`, { position: "top-right" });
@@ -1580,16 +1583,18 @@ function VersionHistoryTab() {
                           <button
                             className="px-2.5 py-1 rounded border border-gray-200 text-gray-600 hover:border-gray-300"
                             style={{ fontSize: 11 }}
+                            disabled={!!checking}
                             onClick={() => setConfirmOffline(null)}
                           >
                             Cancel
                           </button>
                           <button
                             className="px-2.5 py-1 rounded text-white"
-                            style={{ fontSize: 11, background: "#e5484d" }}
+                            style={{ fontSize: 11, background: "#e5484d", opacity: checking ? 0.6 : 1 }}
+                            disabled={!!checking}
                             onClick={() => runOffline(v)}
                           >
-                            OK
+                            {checking === v.version ? "Checking…" : "OK"}
                           </button>
                         </div>
                       </div>
