@@ -211,7 +211,7 @@ function renderTeamDir() {
     x.className = 'tag-x';
     x.textContent = '✕';
     x.title = '删除该 Biz Team';
-    x.addEventListener('click', () => confirmRemoveTeam(t));
+    x.addEventListener('click', () => confirmRemoveTeam(t, x));
     tag.appendChild(x);
     wrap.appendChild(tag);
   });
@@ -249,12 +249,13 @@ function renderTeamDir() {
   wrap.appendChild(addBtn);
 }
 
-function confirmRemoveTeam(team) {
+function confirmRemoveTeam(team, anchor) {
   const count = assignments.filter(a => a.team === team).length;
   openConfirm(
     count > 0
       ? `删除 Biz Team「${team}」将同时移除该 Team 下 ${count} 条用户角色配置，确认删除？`
       : `确认删除 Biz Team「${team}」？`,
+    anchor,
     () => {
       teams = teams.filter(t => t !== team);
       assignments = assignments.filter(a => a.team !== team);
@@ -329,7 +330,7 @@ function submitUserModal() {
 }
 
 function confirmDelete(email, team) {
-  openConfirm(`确认删除 ${email} 在「${team}」下的角色配置？`, () => {
+  openConfirm(`确认删除 ${email} 在「${team}」下的角色配置？`, btn, () => {
     assignments = assignments.filter(a => !(a.email === email && a.team === team));
     toast('Role assignment deleted');
     render();
@@ -338,10 +339,42 @@ function confirmDelete(email, team) {
 
 /* ---------- 通用确认弹窗 ---------- */
 
-function openConfirm(text, fn) {
-  $('confirm-text').textContent = text;
-  state.confirmFn = fn;
-  $('confirm-modal').classList.remove('hidden');
+/* popconfirm：破坏性/确认操作统一交互（锚定触发按钮，Esc/点击外部关闭） */
+let popEl = null, popFn = null;
+function closePop() {
+  if (popEl) { popEl.remove(); popEl = null; }
+  document.removeEventListener('click', outsideClose);
+}
+function outsideClose(e) {
+  if (popEl && !popEl.contains(e.target)) closePop();
+}
+function openConfirm(text, anchor, fn, variant = 'danger') {
+  closePop();
+  popFn = fn;
+  popEl = document.createElement('div');
+  popEl.className = 'popconfirm';
+  const t = document.createElement('div');
+  t.className = 'pop-text';
+  t.textContent = text;
+  const acts = document.createElement('div');
+  acts.className = 'pop-actions';
+  const cancel = document.createElement('button');
+  cancel.className = 'pop-btn';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', closePop);
+  const ok = document.createElement('button');
+  ok.className = 'pop-btn' + (variant === 'primary' ? ' primary' : ' danger');
+  ok.textContent = 'OK';
+  ok.addEventListener('click', () => { const f = popFn; closePop(); if (f) f(); });
+  acts.append(cancel, ok);
+  popEl.append(t, acts);
+  document.body.appendChild(popEl);
+  const width = Math.min(280, window.innerWidth - 24);
+  const r = anchor.getBoundingClientRect();
+  popEl.style.width = width + 'px';
+  popEl.style.left = Math.max(12, Math.min(r.left, window.innerWidth - width - 12)) + 'px';
+  popEl.style.top = Math.min(r.bottom + 6, window.innerHeight - 110) + 'px';
+  setTimeout(() => document.addEventListener('click', outsideClose), 0);
 }
 
 /* ---------- 事件绑定 ---------- */
@@ -386,16 +419,10 @@ function bindEvents() {
     render();
   });
 
-  $('btn-confirm-cancel').addEventListener('click', () => $('confirm-modal').classList.add('hidden'));
-  $('btn-confirm-ok').addEventListener('click', () => {
-    $('confirm-modal').classList.add('hidden');
-    if (state.confirmFn) { state.confirmFn(); state.confirmFn = null; }
-  });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       $('user-modal').classList.add('hidden');
-      $('confirm-modal').classList.add('hidden');
       $('team-dir-panel').classList.add('hidden');
     }
   });
