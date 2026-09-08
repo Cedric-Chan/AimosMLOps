@@ -4,24 +4,51 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  /* ── brand ── */
   --teal: #13c2c2;
   --teal-hover: #36cfc9;
-  --text: #333;
-  --text-sub: #666;
+  --teal-dark: #08979c;
+  /* ── text ── */
+  --text: #333333;
+  --text-sub: #666666;
+  --text-faint: #999999;
+  --text-placeholder: #bfbfbf;
+  /* ── surfaces & borders ── */
+  --bg-page: #f0f2f5;
+  --bg-subtle: #fafafa;
+  --bg-muted: #f5f5f5;
   --border: #e8e8e8;
+  --border-strong: #d9d9d9;
+  --border-faint: #f0f0f0;
+  /* ── status ── */
   --danger: #ff4d4f;
+  --danger-hover: #ff7875;
+  /* ── radius ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  /* ── shadow ── */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, .15);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, .1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, .16);
+  /* ── type ── */
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+  /* ── shell only ── */
+  --sidebar-bg: #fafbfc;
+  --item-hover: rgba(0, 0, 0, 0.045);
+  --item-active: #e9ebee;
 }
 
 body {
-  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   color: var(--text);
-  background: #f0f2f5;
+  background: var(--bg-page);
 }
 
 .page { padding: 16px; }
-.card { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.card { background: #fff; border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
 
 /* ---------- 筛选栏 ---------- */
 .filter-bar { display: flex; align-items: center; }
@@ -29,8 +56,8 @@ body {
 .filter-actions { margin-left: auto; display: flex; gap: 10px; }
 
 input[type="text"], select, textarea {
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   padding: 0 11px;
   font-size: 13.5px;
   font-family: inherit;
@@ -42,12 +69,12 @@ input[type="text"] { height: 32px; width: 230px; }
 select { height: 32px; min-width: 170px; }
 textarea { padding: 8px 11px; resize: vertical; line-height: 1.6; }
 input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(19,194,194,.12); }
-input::placeholder, textarea::placeholder { color: #bfbfbf; }
+input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 
 /* ---------- 按钮 ---------- */
 .btn {
   height: 32px; padding: 0 16px;
-  border-radius: 6px; border: 1px solid #d9d9d9;
+  border-radius: var(--radius-md); border: 1px solid var(--border-strong);
   background: #fff; color: var(--text);
   font-size: 13.5px; cursor: pointer; transition: all .15s;
 }
@@ -63,7 +90,7 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
   width: 30px; height: 30px;
   display: grid; place-items: center;
   border: none; background: none;
-  border-radius: 6px; cursor: pointer; color: var(--text-sub);
+  border-radius: var(--radius-md); cursor: pointer; color: var(--text-sub);
 }
 .icon-btn:hover { background: rgba(0,0,0,.05); color: var(--teal); }
 .icon-btn svg { width: 16px; height: 16px; }
@@ -72,18 +99,18 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 .mm-table { width: 100%; border-collapse: collapse; }
 .mm-table th {
   text-align: left; font-weight: 600; color: var(--text);
-  padding: 12px 16px; border-bottom: 1px solid #f0f0f0;
-  background: #fafafa; white-space: nowrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--border-faint);
+  background: var(--bg-subtle); white-space: nowrap;
 }
-.mm-table td { padding: 13px 16px; border-bottom: 1px solid #f0f0f0; }
-.mm-table td.mono { font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.mm-table td { padding: 13px 16px; border-bottom: 1px solid var(--border-faint); }
+.mm-table td.mono { font-family: var(--font-mono); font-size: 12.5px; }
 .mm-table td.time { color: var(--text-sub); font-size: 13px; }
 .link-btn { border: none; background: none; cursor: pointer; font-size: 13.5px; padding: 0 4px; }
 .link-btn.edit { color: var(--teal); }
 .link-btn.edit:hover { color: var(--teal-hover); }
 .link-btn.delete { color: var(--danger); }
-.link-btn.delete:hover { color: #ff7875; }
-.empty-row td { text-align: center; color: #999; padding: 40px 0; }
+.link-btn.delete:hover { color: var(--danger-hover); }
+.empty-row td { text-align: center; color: var(--text-faint); padding: 40px 0; }
 
 /* ---------- 分页 ---------- */
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 16px; }
@@ -91,7 +118,7 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 .page-buttons { display: flex; gap: 6px; }
 .page-btn {
   min-width: 28px; height: 28px;
-  border: 1px solid #d9d9d9; border-radius: 6px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
   background: #fff; color: var(--text);
   font-size: 13px; cursor: pointer; padding: 0 6px;
 }
@@ -109,10 +136,10 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
   z-index: 200;
 }
 .modal-overlay.hidden { display: none; }
-.modal { width: 460px; background: #fff; border-radius: 8px; padding: 20px 24px; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
+.modal { width: 460px; background: #fff; border-radius: var(--radius-lg); padding: 20px 24px; box-shadow: var(--shadow-md); }
 .modal-confirm { width: 380px; }
 .modal-title { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 600; margin-bottom: 18px; }
-.modal-close { border: none; background: none; cursor: pointer; font-size: 18px; color: #999; line-height: 1; }
+.modal-close { border: none; background: none; cursor: pointer; font-size: 18px; color: var(--text-faint); line-height: 1; }
 .modal-close:hover { color: var(--text); }
 
 .form-item { margin-bottom: 16px; }
@@ -124,9 +151,9 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 .input-clear {
   position: absolute; right: 8px; top: 8px;
   border: none; background: none; cursor: pointer;
-  color: #bfbfbf; font-size: 14px; line-height: 1.4;
+  color: var(--text-placeholder); font-size: 14px; line-height: 1.4;
 }
-.input-clear:hover { color: #999; }
+.input-clear:hover { color: var(--text-faint); }
 .form-err { color: var(--danger); font-size: 12.5px; margin-top: 5px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .confirm-text { line-height: 1.6; padding: 4px 0 8px; }
@@ -139,8 +166,8 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 .toast {
   background: #fff; border: 1px solid var(--border);
   border-left: 3px solid var(--teal);
-  box-shadow: 0 4px 12px rgba(0,0,0,.1);
-  border-radius: 6px; padding: 9px 16px; font-size: 13.5px;
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-md); padding: 9px 16px; font-size: 13.5px;
   animation: toast-in .2s ease;
 }
 .toast.error { border-left-color: var(--danger); }
@@ -161,7 +188,7 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 
 .table-scroll { overflow-x: auto; }
 .mm-table th, .mm-table td { white-space: nowrap; }
-.mm-table td.mono { font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.mm-table td.mono { font-family: var(--font-mono); font-size: 12.5px; }
 .mm-table td.multi-owner { white-space: normal; }
 .mm-table td.multi-owner div { line-height: 1.6; }
 
@@ -186,8 +213,8 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 .owner-box {
   width: 100%;
   min-height: 36px;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   padding: 4px 8px;
   display: flex;
   flex-wrap: wrap;
@@ -201,20 +228,20 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: #f0f0f0;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
+  background: var(--border-faint);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   padding: 1px 7px;
   font-size: 12.5px;
 }
-.owner-chip .chip-x { border: none; background: none; cursor: pointer; color: #999; padding: 0; font-size: 12px; }
+.owner-chip .chip-x { border: none; background: none; cursor: pointer; color: var(--text-faint); padding: 0; font-size: 12px; }
 .owner-chip .chip-x:hover { color: var(--danger); }
 
 /* ---------- Build Detail 页 ---------- */
 .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .back-arrow {
   width: 30px; height: 30px;
-  border: 1px solid #d9d9d9; border-radius: 6px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
   background: #fff; cursor: pointer;
   font-size: 15px; color: var(--text);
 }
@@ -227,14 +254,14 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 .kv-row { display: flex; gap: 10px; padding: 7px 0; font-size: 13px; border-bottom: 1px dashed #f2f2f2; align-items: baseline; }
 .kv-row .k { color: #8c8c8c; width: 150px; min-width: 150px; font-weight: 600; }
 .kv-row .v { color: var(--text); word-break: break-all; }
-.kv-row .v.mono { font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.kv-row .v.mono { font-family: var(--font-mono); font-size: 12.5px; }
 .kv-row.wide { grid-column: 1 / -1; }
 
 .param-header { display: flex; align-items: center; justify-content: space-between; }
 .copy-setting { color: var(--teal); font-weight: 500; }
 .param-scroll {
-  border: 1px solid #f0f0f0;
-  border-radius: 6px;
+  border: 1px solid var(--border-faint);
+  border-radius: var(--radius-md);
   max-height: 300px;
   overflow-y: auto;
   margin-bottom: 8px;
@@ -242,16 +269,16 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 .param-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .param-table th {
   text-align: left; font-weight: 600;
-  padding: 10px 14px; background: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 10px 14px; background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-faint);
   position: sticky; top: 0;
 }
-.param-table td { padding: 9px 14px; border-bottom: 1px solid #f7f7f7; font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.param-table td { padding: 9px 14px; border-bottom: 1px solid #f7f7f7; font-family: var(--font-mono); font-size: 12.5px; }
 .param-count { color: var(--text-sub); font-size: 13px; }
 .detail-footer { display: flex; justify-content: flex-end; margin-top: 14px; }
 
-.form-hint { font-size: 12px; color: #999; margin-top: 4px; }
-input:disabled, select:disabled, textarea:disabled { background: #f5f5f5; color: #999; cursor: not-allowed; }
+.form-hint { font-size: 12px; color: var(--text-faint); margin-top: 4px; }
+input:disabled, select:disabled, textarea:disabled { background: var(--bg-muted); color: var(--text-faint); cursor: not-allowed; }
 
 /* ---------- 平台统一微调（ui-ux-pro-max revamp 2026-09-07） ----------
  * 主色对齐 React 应用 token #13c2c2；补齐 skill 清单项：
@@ -266,5 +293,5 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* ── UX revamp: focus ring + press feedback ── */
-:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: var(--radius-sm); }
 .btn:active, .page-btn:active, .icon-btn:active, .link-btn:active, .nav-item:active { transform: scale(.97); }
