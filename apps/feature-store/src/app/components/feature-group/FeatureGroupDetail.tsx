@@ -395,6 +395,7 @@ export default function FeatureGroupDetail() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate("/fg")}
+                aria-label="Back to Feature Group list"
                 className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-teal-300 hover:text-teal-600 transition-all flex-shrink-0"
               >
                 <ArrowLeft size={16} />
@@ -769,6 +770,7 @@ function SortBtn({
   return (
     <button
       onClick={() => onSort(col)}
+      aria-label={`Sort by ${col}`}
       className={`inline-flex items-center ml-0.5 transition-colors ${
         active ? "text-teal-500" : "text-gray-300 hover:text-gray-400"
       }`}
@@ -952,6 +954,7 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
                   <span>Feature Name</span>
                   <SortBtn col="name" activeCol={sortCol} dir={sortDir} onSort={handleSort} />
                   <button
+                    aria-label="Filter by feature name"
                     onClick={() => toggleFilter("name")}
                     className={`transition-colors ${hasFilter("name") ? "text-teal-500" : "text-gray-300 hover:text-gray-400"}`}
                   >
@@ -982,6 +985,7 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
                   Data Type
                   <SortBtn col="dataType" activeCol={sortCol} dir={sortDir} onSort={handleSort} />
                   <button
+                    aria-label="Filter by data type"
                     onClick={() => toggleFilter("dataType")}
                     className={`ml-0.5 transition-colors ${hasFilter("dataType") ? "text-teal-500" : "text-gray-300 hover:text-gray-400"}`}
                   >
@@ -1007,6 +1011,7 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
                   <div className="flex items-center gap-0.5">
                     {label}
                     <button
+                      aria-label={`Filter by ${label}`}
                       onClick={() => toggleFilter(key)}
                       className={`ml-0.5 transition-colors ${hasFilter(key) ? "text-teal-500" : "text-gray-300 hover:text-gray-400"}`}
                     >
@@ -1288,8 +1293,15 @@ function VersionHistoryTab() {
       const t = e.target as HTMLElement;
       if (!t.closest("[data-popconfirm]") && !t.closest("[data-offline-trigger]")) setConfirmOffline(null);
     }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmOffline(null);
+    };
     document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [confirmOffline]);
 
   // Offline 前的血缘校验（mock）：Used By 里仍有该 Version 的下游则拒止
