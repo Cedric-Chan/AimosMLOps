@@ -1162,20 +1162,20 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
 
 interface DownstreamAsset {
   version: string;
-  assetType: "Feature WideTable" | "Orches Service";
+  assetType: "Orches Service" | "Holmes Engine";
   assetName: string;
   owner: string;
 }
 
 const MOCK_DOWNSTREAM: DownstreamAsset[] = [
-  { version: "v2", assetType: "Feature WideTable", assetName: "risk_score_sg_v3_wt",    owner: "zhangsan" },
-  { version: "v5", assetType: "Orches Service",    assetName: "credit_scoring_online",  owner: "lisi" },
-  { version: "v3", assetType: "Feature WideTable", assetName: "credit_features_th_wt",  owner: "lisi" },
-  { version: "v2", assetType: "Orches Service",    assetName: "fraud_detection_sg",     owner: "wangwu" },
-  { version: "v1", assetType: "Feature WideTable", assetName: "anti_fraud_mx_wt",       owner: "zhaoliu" },
-  { version: "v8", assetType: "Orches Service",    assetName: "rta_feature_serving",    owner: "sunqi" },
-  { version: "v4", assetType: "Feature WideTable", assetName: "user_profile_sg_wt",     owner: "zhoujielun" },
-  { version: "v1", assetType: "Orches Service",    assetName: "limit_adjust_svc",       owner: "wushi" },
+  { version: "v2", assetType: "Holmes Engine",  assetName: "risk_score_sg_v3_wt",   owner: "zhangsan" },
+  { version: "v5", assetType: "Orches Service", assetName: "credit_scoring_online", owner: "lisi" },
+  { version: "v3", assetType: "Holmes Engine",  assetName: "credit_features_th_wt", owner: "lisi" },
+  { version: "v2", assetType: "Orches Service", assetName: "fraud_detection_sg",    owner: "wangwu" },
+  { version: "v1", assetType: "Holmes Engine",  assetName: "anti_fraud_mx_wt",      owner: "zhaoliu" },
+  { version: "v8", assetType: "Orches Service", assetName: "rta_feature_serving",   owner: "sunqi" },
+  { version: "v4", assetType: "Orches Service", assetName: "user_profile_sg_wt",    owner: "zhoujielun" },
+  { version: "v1", assetType: "Holmes Engine",  assetName: "limit_adjust_svc",      owner: "wushi" },
 ];
 
 const USED_BY_PAGE_SIZE = 5;
@@ -1205,10 +1205,10 @@ function LineageTab() {
                 <td className="px-5 py-3 font-mono text-gray-600">{item.version}</td>
                 <td className="px-5 py-3 text-gray-600">
                   <span className={`inline-flex items-center gap-1.5 ${
-                    item.assetType === "Feature WideTable" ? "text-emerald-700" : "text-violet-700"
+                    item.assetType === "Orches Service" ? "text-violet-700" : "text-emerald-700"
                   }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${
-                      item.assetType === "Feature WideTable" ? "bg-emerald-400" : "bg-violet-400"
+                      item.assetType === "Orches Service" ? "bg-violet-400" : "bg-emerald-400"
                     }`} />
                     {item.assetType}
                   </span>
