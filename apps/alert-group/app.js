@@ -277,6 +277,7 @@ function bindEvents() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      closePop();
       $('ag-modal').classList.add('hidden');
     }
   });
