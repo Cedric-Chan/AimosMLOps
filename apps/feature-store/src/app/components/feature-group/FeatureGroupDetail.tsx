@@ -1559,9 +1559,9 @@ type DetailTab = "features" | "lineage" | "dqc" | "versions";
 
 const DETAIL_TABS: { key: DetailTab; label: string }[] = [
   { key: "features", label: "Feature List" },
+  { key: "versions", label: "Versions"                  },
   { key: "lineage",  label: "Used By"                     },
   { key: "dqc",      label: "Offline DQC"                 },
-  { key: "versions", label: "Versions"                  },
 ];
 
 function DetailTabSection({ fg }: { fg: FeatureGroup }) {
