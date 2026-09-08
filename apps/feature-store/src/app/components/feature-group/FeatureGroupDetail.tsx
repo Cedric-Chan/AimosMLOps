@@ -1391,7 +1391,7 @@ function VersionHistoryTab() {
       <table className="w-full text-sm" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
         <thead>
           <tr style={{ backgroundColor: "#fafafa" }} className="border-b border-gray-100 text-xs text-gray-500">
-            <th className="px-5 py-3 text-left" style={{ fontWeight: 600 }}>Version</th>
+            <th className="px-5 py-3 text-left" style={{ fontWeight: 600 }}>Serving Version</th>
             <th className="px-5 py-3 text-left" style={{ fontWeight: 600 }}>Status</th>
             <th
               className="px-5 py-3 text-left"
