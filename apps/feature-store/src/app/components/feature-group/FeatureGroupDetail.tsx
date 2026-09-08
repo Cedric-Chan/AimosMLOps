@@ -1164,18 +1164,19 @@ interface DownstreamAsset {
   version: string;
   assetType: "Orches Service" | "Holmes Engine";
   assetName: string;
+  assetVersion: string;
   owner: string;
 }
 
 const MOCK_DOWNSTREAM: DownstreamAsset[] = [
-  { version: "v2", assetType: "Holmes Engine",  assetName: "risk_score_sg_v3_wt",   owner: "zhangsan" },
-  { version: "v5", assetType: "Orches Service", assetName: "credit_scoring_online", owner: "lisi" },
-  { version: "v3", assetType: "Holmes Engine",  assetName: "credit_features_th_wt", owner: "lisi" },
-  { version: "v2", assetType: "Orches Service", assetName: "fraud_detection_sg",    owner: "wangwu" },
-  { version: "v1", assetType: "Holmes Engine",  assetName: "anti_fraud_mx_wt",      owner: "zhaoliu" },
-  { version: "v8", assetType: "Orches Service", assetName: "rta_feature_serving",   owner: "sunqi" },
-  { version: "v4", assetType: "Orches Service", assetName: "user_profile_sg_wt",    owner: "zhoujielun" },
-  { version: "v1", assetType: "Holmes Engine",  assetName: "limit_adjust_svc",      owner: "wushi" },
+  { version: "v2", assetType: "Holmes Engine",  assetName: "risk_score_sg_v3_wt",   assetVersion: "v3.2", owner: "zhangsan" },
+  { version: "v5", assetType: "Orches Service", assetName: "credit_scoring_online", assetVersion: "v1.8", owner: "lisi" },
+  { version: "v3", assetType: "Holmes Engine",  assetName: "credit_features_th_wt", assetVersion: "v2.0", owner: "lisi" },
+  { version: "v2", assetType: "Orches Service", assetName: "fraud_detection_sg",    assetVersion: "v4.1", owner: "wangwu" },
+  { version: "v1", assetType: "Holmes Engine",  assetName: "anti_fraud_mx_wt",      assetVersion: "v1.5", owner: "zhaoliu" },
+  { version: "v8", assetType: "Orches Service", assetName: "rta_feature_serving",   assetVersion: "v6.0", owner: "sunqi" },
+  { version: "v4", assetType: "Orches Service", assetName: "user_profile_sg_wt",    assetVersion: "v2.7", owner: "zhoujielun" },
+  { version: "v1", assetType: "Holmes Engine",  assetName: "limit_adjust_svc",      assetVersion: "v1.2", owner: "wushi" },
 ];
 
 const USED_BY_PAGE_SIZE = 5;
@@ -1196,6 +1197,7 @@ function LineageTab() {
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Serving Version</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Type</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Name</th>
+              <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Version</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Owner</th>
             </tr>
           </thead>
@@ -1214,6 +1216,7 @@ function LineageTab() {
                   </span>
                 </td>
                 <td className="px-5 py-3 font-mono text-gray-700">{item.assetName}</td>
+                <td className="px-5 py-3 font-mono text-gray-600">{item.assetVersion}</td>
                 <td className="px-5 py-3 text-gray-500">@{item.owner}</td>
               </tr>
             ))}
