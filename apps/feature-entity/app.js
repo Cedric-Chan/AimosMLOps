@@ -242,6 +242,7 @@ function bindEvents() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      closePop();
       $('entity-modal').classList.add('hidden');
     }
   });
