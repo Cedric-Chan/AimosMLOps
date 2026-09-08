@@ -1539,30 +1539,19 @@ function VersionHistoryTab() {
                     {copied === v.version ? "Copied!" : "Copy"}
                   </button>
 
-                  {v.status === "Published" && (
-                    <>
-                      <span className="text-gray-200">|</span>
-                      <button
-                        className="text-xs transition-colors hover:underline"
-                        style={{ color: "#e5484d", fontWeight: 500 }}
-                        onClick={() => toast(`Offline request submitted for ${v.version} (mock)`)}
-                      >
-                        Offline
-                      </button>
-                    </>
-                  )}
-                  {v.status === "Offline" && (
-                    <>
-                      <span className="text-gray-200">|</span>
-                      <button
-                        className="text-xs transition-colors hover:underline"
-                        style={{ color: "#e5484d", fontWeight: 500 }}
-                        onClick={() => toast(`Delete request submitted for ${v.version} (mock)`)}
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
+                  <span className="text-gray-200">|</span>
+                  <button
+                    className="text-xs transition-colors"
+                    style={{
+                      color: v.status === "Published" ? "#e5484d" : "#d1d5db",
+                      fontWeight: 500,
+                      cursor: v.status === "Published" ? "pointer" : "not-allowed",
+                    }}
+                    disabled={v.status !== "Published"}
+                    onClick={() => v.status === "Published" && toast(`Offline request submitted for ${v.version} (mock)`)}
+                  >
+                    Offline
+                  </button>
 
                 </div>
               </td>
