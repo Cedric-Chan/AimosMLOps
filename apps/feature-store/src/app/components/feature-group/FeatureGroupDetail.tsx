@@ -1161,7 +1161,6 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
 // ─── Used By Tab — downstream assets referencing this FG ─────────────────────
 
 interface DownstreamAsset {
-  servingType: "training" | "serving";
   version: string;
   assetType: "Feature WideTable" | "Orches Service";
   assetName: string;
@@ -1169,14 +1168,14 @@ interface DownstreamAsset {
 }
 
 const MOCK_DOWNSTREAM: DownstreamAsset[] = [
-  { servingType: "training", version: "v2", assetType: "Feature WideTable", assetName: "risk_score_sg_v3_wt",    owner: "zhangsan" },
-  { servingType: "serving",  version: "v5", assetType: "Orches Service",    assetName: "credit_scoring_online",  owner: "lisi" },
-  { servingType: "training", version: "v3", assetType: "Feature WideTable", assetName: "credit_features_th_wt",  owner: "lisi" },
-  { servingType: "serving",  version: "v2", assetType: "Orches Service",    assetName: "fraud_detection_sg",     owner: "wangwu" },
-  { servingType: "training", version: "v1", assetType: "Feature WideTable", assetName: "anti_fraud_mx_wt",       owner: "zhaoliu" },
-  { servingType: "serving",  version: "v8", assetType: "Orches Service",    assetName: "rta_feature_serving",    owner: "sunqi" },
-  { servingType: "training", version: "v4", assetType: "Feature WideTable", assetName: "user_profile_sg_wt",     owner: "zhoujielun" },
-  { servingType: "serving",  version: "v1", assetType: "Orches Service",    assetName: "limit_adjust_svc",       owner: "wushi" },
+  { version: "v2", assetType: "Feature WideTable", assetName: "risk_score_sg_v3_wt",    owner: "zhangsan" },
+  { version: "v5", assetType: "Orches Service",    assetName: "credit_scoring_online",  owner: "lisi" },
+  { version: "v3", assetType: "Feature WideTable", assetName: "credit_features_th_wt",  owner: "lisi" },
+  { version: "v2", assetType: "Orches Service",    assetName: "fraud_detection_sg",     owner: "wangwu" },
+  { version: "v1", assetType: "Feature WideTable", assetName: "anti_fraud_mx_wt",       owner: "zhaoliu" },
+  { version: "v8", assetType: "Orches Service",    assetName: "rta_feature_serving",    owner: "sunqi" },
+  { version: "v4", assetType: "Feature WideTable", assetName: "user_profile_sg_wt",     owner: "zhoujielun" },
+  { version: "v1", assetType: "Orches Service",    assetName: "limit_adjust_svc",       owner: "wushi" },
 ];
 
 const USED_BY_PAGE_SIZE = 5;
@@ -1194,7 +1193,6 @@ function LineageTab() {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50">
-              <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Serving Type</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Version</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Type</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Name</th>
@@ -1204,16 +1202,6 @@ function LineageTab() {
           <tbody>
             {pageRows.map((item, idx) => (
               <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50/40 transition-colors">
-                <td className="px-5 py-3 text-gray-600">
-                  <span className={`inline-flex items-center gap-1.5 ${
-                    item.servingType === "training" ? "text-amber-700" : "text-teal-700"
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${
-                      item.servingType === "training" ? "bg-amber-400" : "bg-teal-400"
-                    }`} />
-                    {item.servingType}
-                  </span>
-                </td>
                 <td className="px-5 py-3 font-mono text-gray-600">{item.version}</td>
                 <td className="px-5 py-3 text-gray-600">
                   <span className={`inline-flex items-center gap-1.5 ${
