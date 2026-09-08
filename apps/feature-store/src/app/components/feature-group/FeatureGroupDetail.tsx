@@ -886,7 +886,6 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
     if (filters.training  === "false" &&  f.training)  return false;
     if (filters.serving   === "true"  && !f.serving)   return false;
     if (filters.serving   === "false" &&  f.serving)   return false;
-    if (filters.dataLatency && f.dataLatency !== filters.dataLatency) return false;
     return true;
   });
 
@@ -1009,25 +1008,6 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
                   />
                 </th>
               ))}
-              {/* Data Latency column header */}
-              <th className="px-5 py-3 text-left" style={{ fontWeight: 600, position: "relative", width: "14%" }}>
-                <div className="flex items-center gap-0.5">
-                  Data Latency
-                  <button
-                    onClick={() => toggleFilter("dataLatency")}
-                    className={`ml-0.5 transition-colors ${hasFilter("dataLatency") ? "text-teal-500" : "text-gray-300 hover:text-gray-400"}`}
-                  >
-                    <Filter size={10} />
-                  </button>
-                </div>
-                <FilterPopover
-                  isOpen={openFilter === "dataLatency"}
-                  value={filters.dataLatency ?? ""}
-                  onChange={(v) => setFilter("dataLatency", v)}
-                  onClose={() => setOpenFilter(null)}
-                  options={["Online", "Nearline", "Offline"]}
-                />
-              </th>
               {/* v2 — Action column */}
               <th className="px-5 py-3 text-left" style={{ fontWeight: 600, width: "13%" }}>
                 Action
@@ -1037,7 +1017,7 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-gray-400 text-sm">
+                <td colSpan={6} className="text-center py-12 text-gray-400 text-sm">
                   No features match the current filters
                 </td>
               </tr>
@@ -1080,12 +1060,6 @@ function FeatureListTab({ fg }: { fg: FeatureGroup }) {
                   <td className="px-5 py-3 text-xs font-mono text-gray-600">{f.dataType}</td>
                   <td className="px-5 py-3"><AvailDot value={f.training}  /></td>
                   <td className="px-5 py-3"><AvailDot value={f.serving}   /></td>
-                  <td className="px-5 py-3 text-xs" style={{ color: "#374151" }}>
-                    {f.serving && f.dataLatency
-                      ? f.dataLatency
-                      : <span className="text-gray-300">—</span>
-                    }
-                  </td>
                   {/* Action */}
                   <td className="px-5 py-3 text-xs">
                     <div className="flex items-center gap-2">
@@ -1288,7 +1262,24 @@ function OfflineDQCTab() {
 function VersionHistoryTab() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, VersionRow["status"]>>({});
+  const [confirmOffline, setConfirmOffline] = useState<string | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Offline 前的血缘校验（mock）：Used By 里仍有该 Version 的下游则拒止
+  function runOffline(v: VersionRow) {
+    setConfirmOffline(null);
+    const deps = MOCK_DOWNSTREAM.filter((d) => d.version === v.version);
+    setTimeout(() => {
+      if (deps.length > 0) {
+        const names = [...new Set(deps.map((d) => d.assetName))].join(", ");
+        toast.error(`Cannot offline ${v.version}: in use by ${names}. Unlink the downstream asset(s) first.`, { position: "top-right" });
+      } else {
+        setStatusOverrides((prev) => ({ ...prev, [v.version]: "Offline" }));
+        toast.success(`${v.version} is now Offline`, { position: "top-right" });
+      }
+    }, 400);
+  }
 
   const TRAINING_KEYS: (keyof VersionConfig)[] = [
     "dataServer", "tableSchema", "tableName", "datePartition", "partitionType",
@@ -1403,7 +1394,9 @@ function VersionHistoryTab() {
           </tr>
         </thead>
         <tbody>
-          {DEFAULT_VERSIONS.map((v) => (
+          {DEFAULT_VERSIONS.map((v) => {
+            const st = statusOverrides[v.version] ?? v.status;
+            return (
             <tr key={v.version} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
               <td className="px-5 py-3.5">
                 <div className="flex items-center gap-2">
@@ -1417,9 +1410,9 @@ function VersionHistoryTab() {
                 </div>
               </td>
               <td className="px-5 py-3.5">
-                <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: STATUS_META[v.status].text }}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_META[v.status].dot }} />
-                  {v.status}
+                <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: STATUS_META[st].text }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_META[st].dot }} />
+                  {st}
                 </span>
               </td>
               <td className="px-5 py-3.5 text-xs text-gray-500">{v.createdAt}</td>
@@ -1531,23 +1524,57 @@ function VersionHistoryTab() {
                   </button>
 
                   <span className="text-gray-200">|</span>
-                  <button
-                    className="text-xs transition-colors"
-                    style={{
-                      color: v.status === "Published" ? "#e5484d" : "#d1d5db",
-                      fontWeight: 500,
-                      cursor: v.status === "Published" ? "pointer" : "not-allowed",
-                    }}
-                    disabled={v.status !== "Published"}
-                    onClick={() => v.status === "Published" && toast(`Offline request submitted for ${v.version} (mock)`)}
-                  >
-                    Offline
-                  </button>
+                  <div className="relative">
+                    <button
+                      className="text-xs transition-colors"
+                      style={{
+                        color: st === "Published" ? "#e5484d" : "#d1d5db",
+                        fontWeight: 500,
+                        cursor: st === "Published" ? "pointer" : "not-allowed",
+                      }}
+                      disabled={st !== "Published"}
+                      onClick={() => setConfirmOffline(confirmOffline === v.version ? null : v.version)}
+                    >
+                      Offline
+                    </button>
+                    {confirmOffline === v.version && st === "Published" && (
+                      <div
+                        className="absolute z-50 rounded-lg bg-white text-xs"
+                        style={{
+                          top: "calc(100% + 6px)",
+                          right: 0,
+                          width: 190,
+                          padding: "12px 14px",
+                          border: "1px solid #d0d7de",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                        }}
+                      >
+                        <div style={{ color: "#24292f", lineHeight: 1.5 }}>Offline this version?</div>
+                        <div className="flex justify-end gap-2" style={{ marginTop: 10 }}>
+                          <button
+                            className="px-2.5 py-1 rounded border border-gray-200 text-gray-600 hover:border-gray-300"
+                            style={{ fontSize: 11 }}
+                            onClick={() => setConfirmOffline(null)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="px-2.5 py-1 rounded text-white"
+                            style={{ fontSize: 11, background: "#e5484d" }}
+                            onClick={() => runOffline(v)}
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                 </div>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
