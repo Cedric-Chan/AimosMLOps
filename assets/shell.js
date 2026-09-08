@@ -30,7 +30,7 @@ const MD_APP = 'apps/model-deployment/index.html';
 
 /* 应用缓存版本号：改动任一原型 app 后递增，强制浏览器刷新 iframe 里的 index.html
  * （应用的 index.html 被缓存而 assets 哈希已换时会出现空白页面） */
-const APPS_VERSION = '20260908a';
+const APPS_VERSION = '20260909a';
 const ARCH_APP = 'apps/architecture/index.html';
 
 const NAV = [

@@ -489,6 +489,7 @@ function bindEvents() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      closePop();
       $('model-modal').classList.add('hidden');
     }
   });

@@ -371,6 +371,7 @@ function bindEvents() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      closePop();
       $('tag-modal').classList.add('hidden');
       $('category-dir-panel').classList.add('hidden');
     }

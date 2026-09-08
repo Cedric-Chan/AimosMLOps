@@ -423,6 +423,7 @@ function bindEvents() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      closePop();
       $('user-modal').classList.add('hidden');
       $('team-dir-panel').classList.add('hidden');
     }
