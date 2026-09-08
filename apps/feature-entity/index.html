@@ -27,7 +27,7 @@
         <span class="list-title">Entity Mgmt</span>
         <button class="btn btn-primary" id="btn-add">Add Entity</button>
         <div class="toolbar-icons">
-          <button class="icon-btn" id="btn-refresh" title="Refresh">
+          <button class="icon-btn" id="btn-refresh" title="Refresh" aria-label="Refresh">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
           </button>
           <button class="icon-btn" id="btn-info" title="实体说明">
@@ -68,13 +68,13 @@
     <div class="modal">
       <div class="modal-title">
         <span id="entity-modal-title">Add Entity</span>
-        <button class="modal-close" id="btn-entity-modal-close">×</button>
+        <button class="modal-close" aria-label="Close" id="btn-entity-modal-close">×</button>
       </div>
       <div class="form-item">
         <label><i>*</i>Entity</label>
         <div class="input-wrap">
           <input id="m-entity" type="text" placeholder="Please Input Entity">
-          <button class="input-clear" data-for="m-entity" title="Clear">⊗</button>
+          <button class="input-clear" data-for="m-entity" title="Clear" aria-label="Clear">⊗</button>
         </div>
         <div class="form-err hidden" id="err-entity"></div>
       </div>
@@ -82,7 +82,7 @@
         <label><i>*</i>Description</label>
         <div class="input-wrap">
           <textarea id="m-desc" rows="3" placeholder="实体唯一说明，避免混用和歧义"></textarea>
-          <button class="input-clear" data-for="m-desc" title="Clear">⊗</button>
+          <button class="input-clear" data-for="m-desc" title="Clear" aria-label="Clear">⊗</button>
         </div>
         <div class="form-err hidden" id="err-desc"></div>
       </div>
@@ -104,7 +104,7 @@
     </div>
   </div>
 
-  <div id="toast-container"></div>
+  <div id="toast-container" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>
 </html>

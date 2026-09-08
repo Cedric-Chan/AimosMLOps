@@ -43,7 +43,7 @@
           <label class="owned-check"><input type="checkbox" id="owned-me"> Owned by me</label>
           <button class="btn btn-primary" id="btn-add">Create Model</button>
           <div class="toolbar-icons">
-            <button class="icon-btn" id="btn-refresh" title="Refresh">
+            <button class="icon-btn" id="btn-refresh" title="Refresh" aria-label="Refresh">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
             </button>
             <button class="icon-btn" id="btn-info" title="模型逻辑实体说明">
@@ -137,7 +137,7 @@
     <div class="modal modal-wide">
       <div class="modal-title">
         <span id="model-modal-title">Create Model</span>
-        <button class="modal-close" id="btn-model-close">×</button>
+        <button class="modal-close" aria-label="Close" id="btn-model-close">×</button>
       </div>
       <div class="form-item">
         <label><i>*</i>Name：</label>
@@ -196,7 +196,7 @@
     </div>
   </div>
 
-  <div id="toast-container"></div>
+  <div id="toast-container" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>
 </html>
