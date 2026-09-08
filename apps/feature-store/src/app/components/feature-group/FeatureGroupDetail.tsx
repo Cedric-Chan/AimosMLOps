@@ -191,6 +191,20 @@ const DEFAULT_VERSIONS: VersionRow[] = [
     },
   },
   {
+    version: "v0",
+    createdAt: "2025-12-01 09:00",
+    createdBy: "cedric.chencan@seamoney.com",
+    status: "Published",
+    publishedAt: "2025-12-02 10:00",
+    isCurrent: false,
+    config: {
+      dataServer: "reg_sg_hive", tableSchema: "risk_db", tableName: "user_risk_score_v0_ods",
+      datePartition: "dt", partitionType: "Incremental Data", updateFrequency: "Daily",
+      entitiesColumns: ["platform_user_id"], filter: "",
+      dataLatency: "Online", featureSource: "riskfeat_hbase_th", sourceType: "HBase", transformation: "OfflineFeatureJoin@V0",
+    },
+  },
+  {
     version: "v1",
     createdAt: "2026-01-05 10:00",
     createdBy: "cedric.chencan@seamoney.com",
@@ -1266,6 +1280,17 @@ function VersionHistoryTab() {
   const [confirmOffline, setConfirmOffline] = useState<string | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 点击弹窗外部时收起 Offline popconfirm
+  useEffect(() => {
+    if (!confirmOffline) return;
+    function onDocClick(e: MouseEvent) {
+      const t = e.target as HTMLElement;
+      if (!t.closest("[data-popconfirm]") && !t.closest("[data-offline-trigger]")) setConfirmOffline(null);
+    }
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [confirmOffline]);
+
   // Offline 前的血缘校验（mock）：Used By 里仍有该 Version 的下游则拒止
   function runOffline(v: VersionRow) {
     setConfirmOffline(null);
@@ -1524,7 +1549,7 @@ function VersionHistoryTab() {
                   </button>
 
                   <span className="text-gray-200">|</span>
-                  <div className="relative">
+                  <div className="relative" data-offline-trigger>
                     <button
                       className="text-xs transition-colors"
                       style={{
@@ -1539,6 +1564,7 @@ function VersionHistoryTab() {
                     </button>
                     {confirmOffline === v.version && st === "Published" && (
                       <div
+                        data-popconfirm
                         className="absolute z-50 rounded-lg bg-white text-xs"
                         style={{
                           top: "calc(100% + 6px)",
