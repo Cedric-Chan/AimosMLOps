@@ -1193,7 +1193,7 @@ function LineageTab() {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50">
-              <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Version</th>
+              <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Serving Version</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Type</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Name</th>
               <th className="px-5 py-3 text-left text-[11px] uppercase tracking-wider text-gray-400 font-medium">Asset Owner</th>
