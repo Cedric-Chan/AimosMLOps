@@ -1420,7 +1420,7 @@ function VersionHistoryTab() {
                   {v.isCurrent && (
                     <span className="px-1.5 py-0.5 rounded text-[10px]"
                       style={{ background: "rgba(19,194,194,0.10)", color: "#13c2c2", border: "1px solid rgba(19,194,194,0.25)", fontWeight: 600 }}>
-                      Current
+                      Latest
                     </span>
                   )}
                 </div>
