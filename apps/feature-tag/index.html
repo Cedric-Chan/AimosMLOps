@@ -31,7 +31,7 @@
         <button class="btn btn-primary" id="btn-category-dir">Category Dir</button>
         <button class="btn btn-primary" id="btn-add">Add Tag</button>
         <div class="toolbar-icons">
-          <button class="icon-btn" id="btn-refresh" title="Refresh">
+          <button class="icon-btn" id="btn-refresh" title="Refresh" aria-label="Refresh">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
           </button>
           <button class="icon-btn" id="btn-info" title="二级结构说明">
@@ -80,7 +80,7 @@
     <div class="modal">
       <div class="modal-title">
         <span id="tag-modal-title">Add Feature Tag</span>
-        <button class="modal-close" id="btn-tag-modal-close">×</button>
+        <button class="modal-close" aria-label="Close" id="btn-tag-modal-close">×</button>
       </div>
       <div class="form-item">
         <label><i>*</i>Category：</label>
@@ -91,7 +91,7 @@
         <label><i>*</i>Feature Tag：</label>
         <div class="input-wrap">
           <input id="m-tag" type="text" placeholder="Please enter Feature Tag">
-          <button class="input-clear" data-for="m-tag" title="Clear">⊗</button>
+          <button class="input-clear" data-for="m-tag" title="Clear" aria-label="Clear">⊗</button>
         </div>
         <div class="form-err hidden" id="err-tag"></div>
       </div>
@@ -99,7 +99,7 @@
         <label>Description：</label>
         <div class="input-wrap">
           <textarea id="m-desc" rows="3" placeholder="大文本框"></textarea>
-          <button class="input-clear" data-for="m-desc" title="Clear">⊗</button>
+          <button class="input-clear" data-for="m-desc" title="Clear" aria-label="Clear">⊗</button>
         </div>
       </div>
       <div class="modal-footer">
@@ -120,7 +120,7 @@
     </div>
   </div>
 
-  <div id="toast-container"></div>
+  <div id="toast-container" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>
 </html>

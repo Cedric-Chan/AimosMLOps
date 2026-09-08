@@ -1,9 +1,11 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:ital,wght@0,500;0,600;1,500&display=swap");
+
 /* Aimos — Model Mgmt 原型样式（复用 user-mgmt / alert-group 同规范） */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --teal: #0fbfbf;
-  --teal-hover: #14c9c9;
+  --teal: #13c2c2;
+  --teal-hover: #36cfc9;
   --text: #333;
   --text-sub: #666;
   --border: #e8e8e8;
@@ -11,7 +13,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   font-size: 14px;
   color: var(--text);
@@ -74,7 +76,7 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
   background: #fafafa; white-space: nowrap;
 }
 .mm-table td { padding: 13px 16px; border-bottom: 1px solid #f0f0f0; }
-.mm-table td.mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.mm-table td.mono { font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
 .mm-table td.time { color: var(--text-sub); font-size: 13px; }
 .link-btn { border: none; background: none; cursor: pointer; font-size: 13.5px; padding: 0 4px; }
 .link-btn.edit { color: var(--teal); }
@@ -159,7 +161,7 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 
 .table-scroll { overflow-x: auto; }
 .mm-table th, .mm-table td { white-space: nowrap; }
-.mm-table td.mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.mm-table td.mono { font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
 .mm-table td.multi-owner { white-space: normal; }
 .mm-table td.multi-owner div { line-height: 1.6; }
 
@@ -225,7 +227,7 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
 .kv-row { display: flex; gap: 10px; padding: 7px 0; font-size: 13px; border-bottom: 1px dashed #f2f2f2; align-items: baseline; }
 .kv-row .k { color: #8c8c8c; width: 150px; min-width: 150px; font-weight: 600; }
 .kv-row .v { color: var(--text); word-break: break-all; }
-.kv-row .v.mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.kv-row .v.mono { font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
 .kv-row.wide { grid-column: 1 / -1; }
 
 .param-header { display: flex; align-items: center; justify-content: space-between; }
@@ -244,7 +246,7 @@ input::placeholder, textarea::placeholder { color: #bfbfbf; }
   border-bottom: 1px solid #f0f0f0;
   position: sticky; top: 0;
 }
-.param-table td { padding: 9px 14px; border-bottom: 1px solid #f7f7f7; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.param-table td { padding: 9px 14px; border-bottom: 1px solid #f7f7f7; font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
 .param-count { color: var(--text-sub); font-size: 13px; }
 .detail-footer { display: flex; justify-content: flex-end; margin-top: 14px; }
 
@@ -262,3 +264,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   outline: 2px solid rgba(19, 194, 194, 0.55);
   outline-offset: 2px;
 }
+
+/* ── UX revamp: focus ring + press feedback ── */
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 4px; }
+.btn:active, .page-btn:active, .icon-btn:active, .link-btn:active, .nav-item:active { transform: scale(.97); }
