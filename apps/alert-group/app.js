@@ -98,7 +98,7 @@ function renderTable() {
   tbody.querySelectorAll('.link-btn.delete').forEach(b =>
     b.addEventListener('click', () => {
       const g = groups.find(x => x.id === Number(b.dataset.id));
-      openConfirm(`确认删除 Alert Group「${g.name}」？删除后指向该 Group 的告警将不再送达。`, () => {
+      openConfirm(`确认删除 Alert Group「${g.name}」？删除后指向该 Group 的告警将不再送达。`, b, () => {
         groups = groups.filter(x => x.id !== g.id);
         toast('Alert Group deleted');
         render();
@@ -210,10 +210,42 @@ function showVerifySuccess(g) {
 
 /* ---------- 通用确认 ---------- */
 
-function openConfirm(text, fn) {
-  $('confirm-text').textContent = text;
-  state.confirmFn = fn;
-  $('confirm-modal').classList.remove('hidden');
+/* popconfirm：破坏性/确认操作统一交互（锚定触发按钮，Esc/点击外部关闭） */
+let popEl = null, popFn = null;
+function closePop() {
+  if (popEl) { popEl.remove(); popEl = null; }
+  document.removeEventListener('click', outsideClose);
+}
+function outsideClose(e) {
+  if (popEl && !popEl.contains(e.target)) closePop();
+}
+function openConfirm(text, anchor, fn, variant = 'danger') {
+  closePop();
+  popFn = fn;
+  popEl = document.createElement('div');
+  popEl.className = 'popconfirm';
+  const t = document.createElement('div');
+  t.className = 'pop-text';
+  t.textContent = text;
+  const acts = document.createElement('div');
+  acts.className = 'pop-actions';
+  const cancel = document.createElement('button');
+  cancel.className = 'pop-btn';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', closePop);
+  const ok = document.createElement('button');
+  ok.className = 'pop-btn' + (variant === 'primary' ? ' primary' : ' danger');
+  ok.textContent = 'OK';
+  ok.addEventListener('click', () => { const f = popFn; closePop(); if (f) f(); });
+  acts.append(cancel, ok);
+  popEl.append(t, acts);
+  document.body.appendChild(popEl);
+  const width = Math.min(280, window.innerWidth - 24);
+  const r = anchor.getBoundingClientRect();
+  popEl.style.width = width + 'px';
+  popEl.style.left = Math.max(12, Math.min(r.left, window.innerWidth - width - 12)) + 'px';
+  popEl.style.top = Math.min(r.bottom + 6, window.innerHeight - 110) + 'px';
+  setTimeout(() => document.addEventListener('click', outsideClose), 0);
 }
 
 /* ---------- 事件绑定 ---------- */
@@ -242,16 +274,10 @@ function bindEvents() {
 
   $('page-size').addEventListener('change', () => { state.pageSize = Number($('page-size').value); state.page = 1; render(); });
 
-  $('btn-confirm-cancel').addEventListener('click', () => $('confirm-modal').classList.add('hidden'));
-  $('btn-confirm-ok').addEventListener('click', () => {
-    $('confirm-modal').classList.add('hidden');
-    if (state.confirmFn) { state.confirmFn(); state.confirmFn = null; }
-  });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       $('ag-modal').classList.add('hidden');
-      $('confirm-modal').classList.add('hidden');
     }
   });
 }
