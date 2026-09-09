@@ -41,6 +41,7 @@ else
   git -C "$WORK" push --quiet origin gh-pages
   echo "已推送 gh-pages（镜像将自动同步 GitHub）"
 fi
+NEW_GH_SHA=$(git -C "$WORK" rev-parse HEAD)
 
 echo "✅ GitLab 已更新"
 echo "   - 源码：https://git.garena.com/cedric.chencan/AimosMLOps"
@@ -48,11 +49,12 @@ echo "   - Pages 站点（约 1-2 分钟后自动重建）：$PAGES_URL"
 
 # ── 轮询 GitHub Pages 构建状态（可选） ──
 if [ "$WATCH" = true ] && command -v gh > /dev/null; then
-  echo "▶ 轮询 GitHub Pages 构建状态（最长 3 分钟，--no-watch 可跳过）"
-  for i in $(seq 1 18); do
+  echo "▶ 轮询 GitHub Pages 构建状态（最长 4 分钟，--no-watch 可跳过）"
+  for i in $(seq 1 24); do
     S=$(gh api repos/Cedric-Chan/AimosMLOps/pages/builds/latest --jq '.status + " @ " + .commit[0:7]' 2>/dev/null || echo "?")
     echo "  [$i] $S"
-    case "$S" in built*) break ;; esac
+    C=$(echo "$S" | sed 's/.*@ //')
+    if [ "${S%% @*}" = "built" ] && [ "$C" = "${NEW_GH_SHA:0:7}" ]; then echo "  ✅ 最新内容已上线"; break; fi
     sleep 10
   done
 fi
