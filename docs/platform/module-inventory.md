@@ -16,7 +16,7 @@
 
 | 子模块 | 状态 | 说明 | 待设计事项 |
 |--------|------|------|-----------|
-| LLM Mgmt | 🟡 | AI 资产统一管理。线上平台当前为 (new) LLM Management / LLM Model / LLM Provider 三项，目标结构收敛为 LLM Mgmt 一个子模块 | 资产列表、接入表单、供应商配置 |
+| LLM Mgmt | ✅ | LLM 资产管理：Name 唯一；Region 8 地区 / Provider 4 供应商 / Model Type（Chat·Embedding）/ API Key 掩码 / Team Access 可见范围；Check 连通性测试（mock）。原型 `apps/llm-mgmt/`，规格见 [llm-mgmt/spec.md](../llm-mgmt/spec.md) | Check 真实口径、API Key 加密存储、多团队共享待定 |
 | Skill Market | 🟡 | Skill 资产市场 | 上架流程、市场列表、使用统计 |
 | Knowledge Base | 🟡 | 知识库管理 | 知识库列表、文档导入、索引构建链路 |
 

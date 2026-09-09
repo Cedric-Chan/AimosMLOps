@@ -17,7 +17,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 | **Online Runtime** | Orches Service | Placeholder | 传统模型实时服务编排 |
 | | LLM Workflow | Placeholder | AI Workflow 编排 |
 | | Agent App | Future | 未来空槽位，预留 |
-| **AI Hub** | LLM Mgmt | Placeholder | AI 资产统一管理（线上为 (new) LLM Management / LLM Model / LLM Provider，目标收敛为此） |
+| **AI Hub** | LLM Mgmt | ✅ 原型已覆盖 | LLM 资产接入管理（Region / Provider / Model Type / Team Access / Check 连通性）；规格见 docs/llm-mgmt/spec.md |
 | | Skill Market | Placeholder | Skill 资产市场 |
 | | Knowledge Base | Placeholder | 知识库 |
 | **Model Platform** | MLFlow | ✅ 静态示意原型 | 内部改造并嵌入的开源 MLflow：训练迭代管理（Run 对比 / 指标 / Artifact / 模型版本），以平台 MLFlow 页签内嵌其 UI |
@@ -82,6 +82,7 @@ Aimos MLOps/
 │   └── architecture/              # 平台架构图册（archify 生成交互图 + 嵌入页，纯静态，无构建）
 │   └── feature-entity/            # Feature Store / Feature Entity 原型（纯静态，无构建）
 │   └── feature-tag/               # Feature Store / Feature Tag 原型（纯静态，无构建）
+│   └── llm-mgmt/                  # AI Hub / LLM Mgmt 原型（纯静态，无构建）
 ├── docs/
 │   ├── platform/                  # 平台级文档（架构总览、模块清单）
 │   ├── user-mgmt/                 # User 模块领域规则与交互规格
