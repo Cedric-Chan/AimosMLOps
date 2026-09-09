@@ -1,0 +1,27 @@
+# Aimos MLOps — GitLab Pages 部署
+# 推送到 main 后自动构建整站（平台壳 + 全部应用原型）并发布 GitLab Pages。
+# 说明：
+#   - Feature Store 与 Model Experiment 为 Vite + React 应用，需先构建（dist）
+#   - 其余应用为纯静态目录，直接拷贝
+#   - allow_failure: true —— 在实例提供可用 Runner 前，本 job 会 pending，
+#     但不会阻塞 MR 合并
+image: node:22
+
+pages:
+  stage: deploy
+  allow_failure: true
+  script:
+    - corepack enable
+    - cd apps/feature-store && pnpm install --frozen-lockfile && pnpm run build && cd ../..
+    - (cd apps/model-experiment && npm ci && npm run build)
+    - mkdir -p public/apps
+    - cp index.html public/
+    - cp -r assets public/
+    - for dir in apps/*/; do name=$(basename "$dir"); if [ -d "$dir/dist" ]; then cp -r "$dir/dist" "public/apps/$name"; else cp -r "$dir" "public/apps/$name"; fi; done
+    - echo "Pages 部署完成，共发布以下应用："
+    - ls public/apps
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
