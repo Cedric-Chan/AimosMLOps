@@ -25,12 +25,13 @@ const AG_APP = 'apps/alert-group/index.html';
 const FE_APP = 'apps/feature-entity/index.html';
 const FT_APP = 'apps/feature-tag/index.html';
 const MM_APP = 'apps/model-mgmt/index.html';
+const LLM_APP = 'apps/llm-mgmt/index.html';
 const MLFLOW_APP = 'apps/mlflow/index.html';
 const MD_APP = 'apps/model-deployment/index.html';
 
 /* 应用缓存版本号：改动任一原型 app 后递增，强制浏览器刷新 iframe 里的 index.html
  * （应用的 index.html 被缓存而 assets 哈希已换时会出现空白页面） */
-const APPS_VERSION = '20260909a';
+const APPS_VERSION = '20260909b';
 const ARCH_APP = 'apps/architecture/index.html';
 
 const NAV = [
@@ -58,10 +59,8 @@ const NAV = [
     label: 'AI Hub',
     icon: ICONS.aiHub,
     items: [
-      { id: 'llm-mgmt', label: 'LLM Mgmt', type: 'placeholder',
-        desc: 'AI 资产统一管理入口：LLM 模型资产的接入、版本与供应商管理（对应线上平台的 (new) LLM Management）。原型待设计。',
-        notes: ['线上平台当前拆分为 (new) LLM Management / LLM Model / LLM Provider，目标结构收敛为 LLM Mgmt 一个子模块', '待补充：资产列表、接入表单、供应商配置'],
-        doc: `${GITHUB_BASE}/docs/platform/module-inventory.md` },
+      { id: 'llm-mgmt', label: 'LLM Mgmt', type: 'iframe', app: LLM_APP,
+        desc: 'LLM 资产管理原型：Name 全局唯一；Region / Provider（OpenAI·Gemini·Claude·Compass）/ Model Type（Chat·Embedding）/ Endpoint 接入信息；Team Access 控制可见范围；Check 模拟连通性测试。' },
       { id: 'skill-market', label: 'Skill Market', type: 'placeholder',
         desc: 'Skill 市场：AI 技能（Skill）资产的发布、分发与订阅管理。原型待设计。',
         notes: ['AI Hub 三大子模块之一', '待补充：Skill 上架流程、市场列表、使用统计'],
