@@ -102,6 +102,18 @@ Aimos MLOps/
 - **文档**：平台级放 `docs/platform/`，模块级分别放 `docs/feature-store/`、`docs/model-experiment/`。
 - 推送到 `main` 后，Actions 自动构建并发布 Pages（首次需在仓库 Settings → Pages 将 Source 设为 **GitHub Actions**）。
 
+## 部署（GitLab → GitHub 镜像链路）
+
+```bash
+./scripts/deploy.sh        # 组装站点 → 推 main/gh-pages 到 GitLab → 镜像同步 GitHub → Pages 自动重建（含状态轮询）
+./scripts/deploy.sh --no-watch
+```
+
+- 源码（main）与部署产物（gh-pages）**都推 GitLab**，由 GitLab 的 push mirror（仅受保护分支）自动同步 GitHub
+- GitHub 端内置 `pages-build-deployment` 在 gh-pages 更新后自动重建站点，无需手动操作
+- ⚠️ 不要直推 GitHub main（会造成与 GitLab 分叉，导致 push mirror 报错）
+- 本地预览：`./scripts/assemble.sh` 后对 `local-dist/` 起任意静态服务器
+
 ## 历史仓库（已冻结，不再维护）
 
 | 仓库 | 内容去向 |
