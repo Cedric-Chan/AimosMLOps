@@ -193,6 +193,9 @@ function refreshModalButtons() {
   const v = quietValidate();
   const valid = v.name && v.region && v.provider && v.type && v.model && v.key && v.endpoint &&
     v.ownerOk && !v.dup;
+  // Name 重复时给出内联原因（否则 Submit 只是静默禁用，用户不知所以）
+  if (v.name && v.dup) setErr('name', `LLM「${v.name}」已存在`);
+  else if (v.name) setErr('name', '');
   $('btn-llm-check').disabled = !(v.name && v.region && v.provider && v.type && v.model && v.key && v.endpoint && v.ownerOk);
   $('btn-llm-submit').disabled = !valid;
 }
@@ -204,6 +207,7 @@ function openLlmModal(mode, name) {
     REGIONS.map(r => `<option ${state.editing && state.editing.region === r ? 'selected' : ''}>${r}</option>`).join('');
   $('m-provider').innerHTML = '<option value="">Please select</option>' +
     PROVIDERS.map(p => `<option ${state.editing && state.editing.provider === p ? 'selected' : ''}>${p}</option>`).join('');
+  $('m-type').value = state.editing ? state.editing.type : '';
   $('m-name').value = state.editing ? state.editing.name : '';
   $('m-model').value = state.editing ? state.editing.model : '';
   $('m-apikey').value = state.editing ? maskedKey(state.editing.apikey) : '';
