@@ -1,0 +1,78 @@
+# 构建 Feature Store 与 Model Experiment 两个原型应用 + 平台壳，统一发布到 GitHub Pages。
+# 首次启用：仓库 Settings → Pages → Build and deployment → Source 选择「GitHub Actions」。
+name: Deploy Aimos MLOps (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-aimos-mlops
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build Feature Store app
+        working-directory: apps/feature-store
+        # 不设 VITE_BASE_PATH：两个应用默认相对 base './'，适配任意部署子路径
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Build Model Experiment app
+        working-directory: apps/model-experiment
+        run: |
+          npm ci
+          npm run build
+
+      - name: Assemble site
+        run: |
+          mkdir -p dist/apps
+          cp index.html dist/
+          cp -r assets dist/
+          touch dist/.nojekyll
+          cp -r apps/feature-store/dist dist/apps/feature-store
+          cp -r apps/model-experiment/dist dist/apps/model-experiment
+          cp -r apps/user-mgmt dist/apps/user-mgmt
+          cp -r apps/alert-group dist/apps/alert-group
+          cp -r apps/feature-entity dist/apps/feature-entity
+          cp -r apps/feature-tag dist/apps/feature-tag
+          cp -r apps/architecture dist/apps/architecture
+          cp -r apps/model-mgmt dist/apps/model-mgmt
+          cp -r apps/llm-mgmt dist/apps/llm-mgmt
+          cp -r apps/model-deployment dist/apps/model-deployment
+          cp -r apps/mlflow dist/apps/mlflow
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
