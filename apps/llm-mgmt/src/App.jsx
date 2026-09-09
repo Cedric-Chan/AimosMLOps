@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import LlmModal, { maskedKey } from './LlmModal.jsx'
+
 
 
 const CURRENT_USER = 'cedric.chencan@seamoney.com'
@@ -170,7 +170,7 @@ export default function App() {
                     <td>{m.access ? m.access : 'Private'}</td>
                     <td>{m.region}</td>
                     <td className="webhook-cell" title={m.endpoint}>{m.endpoint}</td>
-                    <td>{m.desc ? esc(m.desc) : <span style={{ color: '#ccc' }}>-</span>}</td>
+                    <td>{m.desc ? m.desc : <span style={{ color: '#ccc' }}>-</span>}</td>
                     <td className="time">{m.created}</td>
                     <td className="time">{m.updated}</td>
                     <td>
@@ -223,21 +223,6 @@ export default function App() {
             setPop(null)
           }}
           onCancel={() => setPop(null)}
-        />
-      )}
-
-      {modal && (
-        <LlmModal
-          mode={modal.mode}
-          record={modal.record}
-          llms={llms}
-          regions={REGIONS}
-          providers={PROVIDERS}
-          teams={TEAMS}
-          currentUser={CURRENT_USER}
-          onClose={() => setModal(null)}
-          onSubmit={handleSubmit}
-          onCheck={handleCheck}
         />
       )}
 
