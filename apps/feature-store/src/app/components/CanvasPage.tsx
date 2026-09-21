@@ -29,7 +29,7 @@ import {
 import { FG_CATALOG, JOIN_TYPES } from "@/data/featureGroupCatalog";
 
 const HIVE_ALLOWLIST_HINT =
-  "Only Hive tables on the risk_realtime project allowlist are listed. Contact the platform team if you need access.";
+  "Only Hive tables on the project allowlist are listed. Contact the platform team if you need access.";
 
 export type NodeStatus = "waiting" | "cache_skipped" | "running" | "failed" | "success";
 
@@ -827,7 +827,7 @@ function FrameTablePanel({
                 </div>
               </div>
 
-              {/* Hive allowlist (risk_realtime project) */}
+              {/* Hive allowlist (project) */}
               {isHive && (
                 <div
                   className="flex items-start gap-2 rounded-xl border border-teal-100 bg-teal-50/50 px-3 py-2"

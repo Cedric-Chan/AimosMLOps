@@ -1,5 +1,5 @@
 /**
- * Mock Hive allowlist for risk_realtime project table access.
+ * Mock Hive allowlist for project table access.
  * Replace with Project Table Access List API in production.
  */
 export const HIVE_PROJECT_TABLES: Record<string, string[]> = {
