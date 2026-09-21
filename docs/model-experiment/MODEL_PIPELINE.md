@@ -652,15 +652,17 @@ init_hypers = {
 ## 完整 Pipeline 示例
 
 ```python
+import os
+
 from risk_model_on_ray.ray_util.ray_helper.ray_util import RayUtil
 from ray.runtime_env import RuntimeEnv
 
-# 初始化 RayUtil
+# 初始化 RayUtil；账号与密码从环境变量读取，不要写进代码或文档
 ray_util = RayUtil(
     cluster_name='risk-model-training',
     rayhub_addr='https://rayhub.data-infra.shopee.io',
-    hadoop_user_name='your_account',
-    hadoop_user_password='your_password',
+    hadoop_user_name=os.environ['HADOOP_USER_NAME'],
+    hadoop_user_password=os.environ['HADOOP_USER_PASSWORD'],
     runtime_env=RuntimeEnv(pip=['lightgbm', 'modin[ray]']),
     s3_endpoint='https://s3.your-endpoint.com',
 )
