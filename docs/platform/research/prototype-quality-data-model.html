@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 质量数据模型 · 设计原型</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #0fbfbf; --teal-dark: #0a9a9a; --teal-bg: #e8f9f9; --hl-bg: #eefafa;
+    --text: #333; --sub: #666; --faint: #999;
+    --border: #e8e8e8; --line: #f2f2f2; --warn: #b7791f; --warn-bg: #fdf7e8;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--text); font-size: 14px; line-height: 1.7; background: #fff;
+  }
+  main { max-width: 1080px; margin: 0 auto; padding: 36px 24px 80px; }
+  h1 { font-size: 21px; font-weight: 600; }
+  h2 { font-size: 15px; font-weight: 600; display: flex; align-items: baseline; gap: 8px; }
+  h2 .bar { width: 3px; height: 14px; background: var(--teal); border-radius: 2px; flex: none; }
+  h3 { font-size: 13px; font-weight: 600; color: var(--sub); }
+  p { margin: 0; }
+  .faint { color: var(--faint); }
+  .sub { color: var(--sub); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+  .micro { font-size: 12px; }
+  .up { color: var(--teal-dark); font-weight: 700; margin-right: 3px; }
+
+  header .q { margin-top: 14px; padding: 12px 16px; background: #fafafa; border-radius: 6px; color: var(--sub); }
+  header .sub { margin-top: 10px; font-size: 13px; }
+
+  .notice { border: 1px solid var(--border); border-left: 3px solid var(--teal); border-radius: 6px;
+    padding: 11px 16px; margin-top: 22px; background: #fcfefe; }
+  .notice.bad { border-left-color: var(--warn); background: var(--warn-bg); border-color: #f0e4c8; }
+  .notice .k { font-size: 12px; color: var(--faint); margin-bottom: 2px; }
+  .notice.bad .k { color: var(--warn); }
+
+  .card { border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; margin-top: 20px; }
+  .card > h2:first-child { margin-bottom: 6px; }
+  .tip { font-size: 12px; color: var(--faint); }
+  .block { margin-top: 20px; }
+  .block > h3 { display: flex; align-items: baseline; gap: 8px; }
+  .block > h3 .cnt { font-weight: 400; color: var(--faint); font-size: 12px; }
+
+  .t { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .t th { text-align: left; font-size: 12px; font-weight: 500; color: var(--faint); padding: 0 10px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .t td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .t tr:last-child td { border-bottom: none; }
+  .t td.c, .t th.c { text-align: center; }
+  .t tbody tr.click { cursor: pointer; }
+  .t tbody tr.click:hover { background: #fafafa; }
+  .t tr.sel { background: var(--teal-bg); }
+  .t tr.hl { background: var(--hl-bg); }
+  .t td.nowrap { white-space: nowrap; }
+  .empty { font-size: 13px; color: var(--faint); padding: 8px 0; }
+
+  .b { display: inline-block; font-size: 11px; line-height: 16px; padding: 0 6px; border-radius: 9px;
+    border: 1px solid var(--border); color: var(--sub); white-space: nowrap; }
+  .b.judge { border-color: #bfeaea; background: var(--teal-bg); color: var(--teal-dark); }
+  .b.biz { border-color: #eadfc0; background: var(--warn-bg); color: var(--warn); }
+  .b.warn { border-color: #eadfc0; background: var(--warn-bg); color: var(--warn); }
+  .b.ok { border-color: #bfeaea; background: var(--teal-bg); color: var(--teal-dark); }
+
+  .btn { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid #dedede; background: #fff;
+    border-radius: 6px; cursor: pointer; color: var(--text); }
+  .btn:hover { border-color: var(--teal); color: var(--teal-dark); background: #f7fdfd; }
+  .btn.cur { border-color: var(--teal); background: var(--teal-bg); color: var(--teal-dark); font-weight: 600; }
+  .btn.done { color: var(--faint); border-color: var(--line); }
+  .btn.ghost { border: none; background: none; color: var(--teal-dark); text-decoration: underline; padding: 4px 0; margin-top: 14px; }
+  .groups { margin-top: 12px; }
+  .group { margin-top: 14px; }
+  .group .glabel { font-size: 12px; color: var(--faint); margin-bottom: 7px; }
+  .group .row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 14px; }
+  .tab { font: inherit; font-size: 13px; border: none; background: none; color: var(--sub);
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .tab:hover { background: #f5f5f5; color: var(--text); }
+  .tab.active { background: var(--teal-bg); color: var(--teal-dark); font-weight: 600; }
+  .setup, .watch { margin-top: 14px; font-size: 13px; }
+  .setup { color: var(--sub); }
+  .watch { color: var(--text); }
+  .setup b, .watch b { color: var(--faint); font-weight: 500; margin-right: 6px; }
+  .steps { list-style: none; margin-top: 16px; }
+  .stepitem { margin-bottom: 12px; }
+  .stepnote { font-size: 12px; color: var(--sub); margin: 6px 0 0 2px; padding-left: 9px; border-left: 2px solid var(--line); }
+  .stepnote.bad { color: var(--warn); border-left-color: #eadfc0; }
+  .stepnote.hint { color: var(--faint); }
+  .qs { margin-top: 12px; padding-left: 20px; }
+  .qs li { margin-bottom: 9px; }
+  .qs li b { font-weight: 600; }
+  .spans { margin-top: 4px; font-size: 13px; }
+  .span { display: inline-block; border: 1px solid var(--border); border-radius: 4px; padding: 1px 7px; margin: 2px 0; }
+  .span b { font-weight: 600; font-size: 11px; color: var(--teal-dark); margin-right: 5px; }
+  .arrow { color: var(--faint); margin: 0 6px; }
+  .kv { margin-top: 4px; font-size: 13px; }
+  .kv b { color: var(--faint); font-weight: 500; margin-right: 6px; }
+  .gap { margin-top: 10px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>AI 质量数据模型 · 设计原型</h1>
+    <p class="q">「MLflow 的 Trace / Assessment / EvaluationDataset 三层模型——以『一次请求的完整执行（Trace）』为唯一锚点，机器评分、人工标注、业务反馈、问题发现全部落成同构的 Assessment 挂回 trace，评测集则是这些 trace 的『测试数据库』——能否表达 Aimos 的真实质量场景，并让『人 vs judge 对齐』『反馈回流成评测集』『门禁卡发布』在结构上自然成立？」</p>
+    <p class="sub">本页是设计对齐用的丢弃型原型：点按钮看状态变化，重点观察那些『纸上想当然、一推就露馅』的地方。</p>
+  </header>
+
+  <section class="notice" id="notice"></section>
+
+  <section class="card" id="status">
+    <h2><span class="bar"></span>当前状态</h2>
+    <p class="tip">初始状态：0 条 trace、1 个空评测集（KYC 判定回归集 · Risk-PH）。每次动作后整块重渲染，变化处会浅色高亮 1.5 秒。</p>
+
+    <div class="block">
+      <h3>a · 请求记录（Traces）<span class="cnt" id="traceCnt"></span></h3>
+      <div id="traces"></div>
+    </div>
+
+    <div class="block">
+      <h3>b · 选中的 trace<span class="cnt" id="selHint"></span></h3>
+      <div id="detail"></div>
+    </div>
+
+    <div class="block">
+      <h3>c · 评测集（EvaluationDataset）<span class="cnt" id="dsCnt"></span></h3>
+      <div id="datasets"></div>
+      <div id="dsRecords"></div>
+    </div>
+
+    <div class="block">
+      <h3>d · 门禁运行记录（EvalRun）<span class="cnt" id="runCnt"></span></h3>
+      <div id="runs"></div>
+    </div>
+
+    <div class="block">
+      <h3>e · 对齐报告（Alignment）<span class="cnt" id="alignCnt"></span></h3>
+      <div id="alignment"></div>
+    </div>
+  </section>
+
+  <section class="card" id="actions">
+    <h2><span class="bar"></span>自由探索</h2>
+    <p class="tip">按钮永远可用；被拒绝的动作会在「刚刚发生了什么」里给出拒绝原因。动作作用于「选中的 trace」和「选中的评测集」（点表格里的行可切换选中）。</p>
+    <p class="kv" id="selLine"></p>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <section class="card" id="guide">
+    <h2><span class="bar"></span>引导式演练</h2>
+    <p class="tip">进入任一演练会先把模型重置到初始状态（0 条 trace + 1 个空评测集），保证每次一样。步骤按钮点一下执行一步，脚本会高亮下一步。</p>
+    <div class="tabs" id="tabs"></div>
+    <div id="guideBody"></div>
+  </section>
+
+  <section class="card" id="questions">
+    <h2><span class="bar"></span>待确认的设计点</h2>
+    <ol class="qs">
+      <li><b>期望值只能人写。</b>机器能给判定，不能给真值（LLM 写期望值一律被拒）。那真实场景里谁来写、写多少？这会不会成为评测集的产能瓶颈？</li>
+      <li><b>对齐必须先同名。</b>「人 vs judge」的一致率只统计名称完全相同的反馈；不同名的人工标注只是独立信号。judge 名与标签规范由谁维护、怎么定？</li>
+      <li><b>评测集按 inputs 去重。</b>同一 inputs 不重复入集（细微差异才算不同记录）。业务上能否接受「同一个案例只能有一条记录」？</li>
+      <li><b>评测集记录可以没有 trace。</b>手工/合成样本的 traceId 为 null——这是「一切挂 trace」在这层的结构例外。要不要放开？还是坚持手工样本也必须先造 trace？</li>
+      <li><b>门禁是二分布尔。</b>任何一行、任一 scorer 不过 = 整体失败；叠加非确定性 judge 会假失败。要不要用确定性 scorer 兜底、或改成 k-of-n / 多次取多数？</li>
+      <li><b>版本语义靠 tags。</b>OSS 无数据集版本 API（version 静默返回 None），版本只能用 tags + versionNote 表达。够用吗，还是要自建版本表？</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+/* =====================================================================================
+   QUALITY MODEL —— 纯逻辑。不碰 DOM、不引用任何按钮，可原样搬进真实代码。
+   数据模型：Trace / Assessment（feedback|expectation|issue）/ EvaluationDataset+Record / EvalRun
+   ===================================================================================== */
+/* MODEL-BEGIN */
+
+// ── 规则 6 的随机性来源：judge 判定用伪随机实现，种子 = (traceId, 该 trace 被 judge 评过的次数) ──
+var JUDGE_ACCURACY = 0.75;   // judge 与隐藏真值的一致率约 75%
+var JUDGE_SALT = 49239;      // 演示数据用的盐：改动它只会换一组随机结果，不改变机制
+
+// FNV-1a + avalanche：同一条种子字符串的最后一个字符不同时，取值彼此无关（否则连点重跑会成串相同）
+function hash32(str) {
+  var h = 2166136261;
+  for (var i = 0; i < str.length; i += 1) {
+    h = (h ^ str.charCodeAt(i)) >>> 0;
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  h = (h ^ (h >>> 16)) >>> 0;
+  h = Math.imul(h, 2246822507) >>> 0;
+  h = (h ^ (h >>> 13)) >>> 0;
+  h = Math.imul(h, 3266489909) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+function unitSeed(seed) { return hash32(seed) / 4294967296; }
+function nowISO() { return new Date().toISOString(); }
+// 落库时间一律存 ISO（UTC，便于跨区比较），界面展示用本地时间
+function localHMS() {
+  var d = new Date();
+  var p = function (n) { return (n < 10 ? '0' : '') + n; };
+  return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+}
+function isEmptyBox(v) {
+  if (v === null || v === undefined) return true;
+  if (typeof v === 'string') return v.trim() === '';
+  if (typeof v === 'object') return Object.keys(v).length === 0;
+  return false;
+}
+
+// ── 场景常量：spans、judge 命名（对齐同名规则的命名基础）──
+var SPANS = {
+  'KYC 身份核验': [
+    { type: 'RETRIEVER', name: '证件检索' },
+    { type: 'LLM', name: '比对判定' },
+    { type: 'TOOL', name: '征信查询' }
+  ],
+  'Payslip 收入解析': [
+    { type: 'PARSER', name: '单据解析' },
+    { type: 'LLM', name: '字段抽取' }
+  ]
+};
+var JUDGE_NAMES = { 'KYC 身份核验': 'kyc_result_judge', 'Payslip 收入解析': 'payslip_field_judge' };
+var OTHER_HUMAN_NAME = '人工复核';        // 「不同名」标注用的名字：没有同名 judge，不进对齐报告
+var EXPECTATION_NAME = 'expected_verdict';
+var RATIONALE = {
+  '正确': '输出与输入材料一致，未发现矛盾点',
+  '错误': '输出与输入材料存在矛盾，判定结果可疑'
+};
+var ISSUE_LABELS = [
+  '活体检测在弱光下失败率偏高',
+  'OCR 置信度低但未转人工复核',
+  '同一客户短时间内重复提交'
+];
+
+function QualityModel() { this.reset(); }
+
+QualityModel.prototype = {
+
+  /* ───────────────── 生命周期 ───────────────── */
+  reset: function () {
+    this._n = { trace: 0, assessment: 0, record: 0, run: 0 };
+    this._traces = [];          // Trace[]（内部带 truth，绝不出现在 state()/traceView() 的返回值里）
+    this._datasets = [{
+      id: 'ds1', name: 'KYC 判定回归集', bizTeam: 'Risk-PH',
+      records: [], tags: ['kyc', '判定', 'v0.1'],
+      versionNote: 'v0.1 · 空集，等 trace 回灌'
+    }];
+    this._runs = [];            // EvalRun[]
+    this._judgeCount = {};      // 判定计数：'trace:t1' / 'record:rec2' -> 该对象被 judge 评过几次（规则 6 的种子之一）
+    this.lastEvent = null;      // 「刚刚发生了什么」
+    return this.state();
+  },
+
+  /* ───────────────── 对外动作 ───────────────── */
+
+  // Trace 落库：truth 隐藏真值 = 按 inputs 内容确定性算出（不展示、不返回）
+  recordTrace: function (spec) {
+    var id = 't' + (++this._n.trace);
+    var trace = {
+      id: id, workflow: spec.workflow, bizTeam: spec.bizTeam, region: spec.region,
+      inputs: spec.inputs, outputs: spec.outputs,
+      truth: unitSeed('truth|' + spec.inputs) < 0.5 ? 1 : 0,   // 1=结果正确 / 0=错误
+      spans: (SPANS[spec.workflow] || []).map(function (s, i) {
+        return { id: id + '-s' + (i + 1), type: s.type, name: s.name };
+      }),
+      assessments: [], createdAt: nowISO(), datasetRefs: []
+    };
+    this._traces.push(trace);
+    return this._event(true, '录入请求 ' + id + '：' + trace.workflow + ' · ' + trace.bizTeam +
+      ' · 区域 ' + trace.region + '（真值随请求落库，界面上不显示）', { traceId: id, workflow: trace.workflow });
+  },
+
+  // ── 规则 6：跑 judge。非确定性：同一 trace 再跑一次，判定可能翻转 ──
+  runJudge: function (traceId, judgeName) {
+    var t = this._trace(traceId);
+    if (!t) return this._reject('跑 judge', '没有可用的 trace（未选中，或选中的 trace 已不存在）：先落一条请求，或在上面的表里点一行选中');
+    var key = 'trace:' + t.id;
+    var idx = this._judgeCount[key] || 0;
+    var verdict = this._judge(t.truth, unitSeed('judge|' + JUDGE_SALT + '|' + t.id + '|' + idx));
+    this._judgeCount[key] = idx + 1;
+    var a = this._add(t, {
+      name: judgeName, kind: 'feedback', source: 'LLM_JUDGE', value: verdict,
+      rationale: RATIONALE[verdict], author: judgeName, channel: null
+    });
+    return this._event(true, t.id + ' 第 ' + (idx + 1) + ' 次跑 ' + judgeName + '：判定「' + verdict +
+      '」（judge 是非确定性的——同一条 trace 再跑一次，判定可能翻转）',
+      { assessmentId: a.id, traceId: t.id, verdict: verdict });
+  },
+
+  // 人工标注：value 省略时取人工作为基准的判断（本原型里人工判断即参照标准）
+  humanAnnotate: function (traceId, name, value, author) {
+    var t = this._trace(traceId);
+    if (!t) return this._reject('人工标注', '没有可用的 trace（未选中，或选中的 trace 已不存在）');
+    var v = (value === undefined || value === null) ? this.humanReferenceVerdict(traceId) : value;
+    var a = this._add(t, {
+      name: name, kind: 'feedback', source: 'HUMAN', value: v,
+      rationale: '人工复核结果', author: author || '标注员', channel: '平台'
+    });
+    var same = name === this._judgeName(t.workflow);
+    return this._event(true, '人工标注写到 ' + t.id + '：' + name + ' = 「' + v + '」（标注人 ' + a.author +
+      '、渠道 平台）' + (same ? '；与 judge 同名 → 会进对齐报告' : '；与 judge 名称不同 → 只算该 trace 的独立信号，不进对齐报告'),
+      { assessmentId: a.id, traceId: t.id, value: v, aligned: same });
+  },
+
+  // 期望值（ground truth）：只能由人写
+  logExpectation: function (traceId, fields, author) {
+    var t = this._trace(traceId);
+    if (!t) return this._reject('记录期望值', '没有可用的 trace（未选中，或选中的 trace 已不存在）');
+    var a = this._add(t, {
+      name: EXPECTATION_NAME, kind: 'expectation', source: 'HUMAN', value: fields,
+      rationale: '人工确认的真值（ground truth）', author: author || '标注员', channel: '平台'
+    });
+    var n = 0;
+    for (var i = 0; i < t.assessments.length; i += 1) if (t.assessments[i].kind === 'expectation') n += 1;
+    return this._event(true, '人工把期望值写到 ' + t.id + '：' + this._fmt(fields) +
+      '（这是第 ' + n + ' 条期望值；trace 提升进评测集时，它会作为 ground truth 一起带过去）',
+      { assessmentId: a.id, traceId: t.id, fields: fields });
+  },
+
+  // ── 规则 1：Expectation 只能由人写；LLM 来源一律拒绝 ──
+  logExpectationByLLM: function (traceId, fields) {
+    return this._reject('以 LLM 来源写期望值' + (traceId ? '（' + traceId + '）' : ''),
+      '期望值（ground truth）只能由人标注——机器只能给判定，不能给真值');
+  },
+
+  // 业务系统回写：业务方对判定结果的认可 / 驳回（Aimos 特有；同名，因此会进对齐报告）
+  businessFeedback: function (traceId, verdict, by) {
+    var t = this._trace(traceId);
+    if (!t) return this._reject('业务反馈', '没有可用的 trace（未选中，或选中的 trace 已不存在）');
+    var v = verdict === '认可' ? '正确' : '错误';
+    var name = this._judgeName(t.workflow);
+    var a = this._add(t, {
+      name: name, kind: 'feedback', source: 'HUMAN', value: v,
+      rationale: '业务系统回写：业务方' + verdict + '该判定', author: by || '业务方', channel: '业务系统'
+    });
+    return this._event(true, '业务系统回写反馈：' + t.id + ' 被业务方「' + verdict + '」→ 判定「' + v +
+      '」（渠道 业务系统、名称 ' + name + '，和 judge 同名 → 会进对齐报告）',
+      { assessmentId: a.id, traceId: t.id, value: v });
+  },
+
+  // 问题（issue）：与 feedback 分开的一类 Assessment，有自己的生命周期
+  logIssue: function (traceId, label) {
+    var t = this._trace(traceId);
+    if (!t) return this._reject('记一个问题', '没有可用的 trace（未选中，或选中的 trace 已不存在）');
+    var a = this._add(t, {
+      name: label, kind: 'issue', source: 'LLM_JUDGE', value: '待处理',
+      rationale: '问题发现管道在 trace 上检出并回写', author: 'issue_detection', channel: null
+    });
+    return this._event(true, '在 ' + t.id + ' 上登记一个问题：' + label +
+      '（kind=issue、source=LLM_JUDGE；它不参与对齐统计）', { assessmentId: a.id, traceId: t.id });
+  },
+
+  // ── 规则 3：评测集按 inputs 去重 ──
+  promoteToDataset: function (traceId, datasetId) {
+    var t = this._trace(traceId);
+    if (!t) return this._reject('提升进评测集', '没有可用的 trace（未选中，或选中的 trace 已不存在）');
+    var ds = this._dataset(datasetId);
+    if (!ds) return this._reject('提升进评测集', '找不到评测集 ' + datasetId);
+    var dup = this._recByInputs(ds, t.inputs);
+    if (dup) {
+      return this._reject('把 ' + t.id + ' 提升进「' + ds.name + '」',
+        '评测集按 inputs 去重：' + dup.id + ' 已经是同一 inputs（inputs 相同即视为同一条记录，细微差异才算不同记录）');
+    }
+    var expectations = this._expectationsOf(t);
+    var nExp = Object.keys(expectations).length;
+    var rec = {
+      id: 'rec' + (++this._n.record), inputs: t.inputs, expectations: expectations,
+      source: 'trace回灌', traceId: t.id
+    };
+    ds.records.push(rec);
+    t.datasetRefs.push(ds.id);
+    this._touch(ds);
+    return this._event(true, t.id + ' 已回灌进「' + ds.name + '」→ ' + rec.id +
+      '（source=trace回灌、保留 trace 血缘 ' + t.id + '）' +
+      (nExp ? '；带上 ' + nExp + ' 条人工期望值作为 ground truth'
+            : '；这条 trace 上没有人写期望值 → 记录入集时没有 ground truth（业务反馈和 judge 判定都不会自动变成真值）'),
+      { recordId: rec.id, datasetId: ds.id });
+  },
+
+  // ── 规则 4：手工样本入集，traceId = null（评测集这一层的结构例外）──
+  addManualRecord: function (datasetId, inputs, expectations) {
+    var ds = this._dataset(datasetId);
+    if (!ds) return this._reject('手工加样本', '找不到评测集 ' + datasetId);
+    var dup = this._recByInputs(ds, inputs);
+    if (dup) {
+      return this._reject('把这条手工样本加进「' + ds.name + '」',
+        '评测集按 inputs 去重：' + dup.id + ' 已经是同一 inputs');
+    }
+    var rec = {
+      id: 'rec' + (++this._n.record), inputs: inputs,
+      expectations: expectations || {}, source: '手工', traceId: null
+    };
+    ds.records.push(rec);
+    this._touch(ds);
+    return this._event(true, '手工样本 ' + rec.id + ' 进「' + ds.name + '」：source=手工、traceId=null' +
+      '（没有 trace 也能进评测集——这是「一切挂 trace」在评测集这一层的结构例外）',
+      { recordId: rec.id, datasetId: ds.id });
+  },
+
+  // ── 规则 5 + 6：跑门禁。passed 仅当每个 scorer 在每一行都通过 ──
+  runGate: function (datasetId, scorerSet) {
+    var ds = this._dataset(datasetId);
+    if (!ds) return this._reject('跑门禁', '找不到评测集 ' + datasetId);
+    if (ds.records.length === 0) {
+      return this._reject('在「' + ds.name + '」上跑门禁（' + scorerSet + '）',
+        '这个评测集还是空的：空数据集的「每一行都通过」在逻辑上恒真，那是假通过，所以直接拒绝运行——门禁先要有可评的记录（手工样本或 trace 回灌）');
+    }
+    var useJudge = scorerSet !== '确定性';
+    var size = ds.records.length;
+    var results = [];
+    for (var i = 0; i < size; i += 1) results.push(this._scoreRecord(ds.records[i], useJudge));
+    var scorerNames = ['format_valid'];
+    results.forEach(function (r) {
+      r.scorers.forEach(function (s) { if (scorerNames.indexOf(s.scorer) < 0) scorerNames.push(s.scorer); });
+    });
+    var passed = results.every(function (r) {
+      return r.scorers.every(function (s) { return s.pass; });
+    });
+    var run = {
+      id: 'gate' + (++this._n.run), datasetId: ds.id, scorers: scorerNames, results: results,
+      passed: passed, failedReason: passed ? '—' : this._failText(results), at: nowISO()
+    };
+    this._runs.push(run);
+    return this._event(true, '跑门禁「' + ds.name + '」· ' + scorerSet + ' → ' + (passed ? '通过' : '失败') +
+      '（' + size + ' 条记录、scorer：' + scorerNames.join(' + ') + '）' + (passed ? '' : '。' + run.failedReason),
+      { runId: run.id, datasetId: ds.id, passed: passed, failedReason: run.failedReason, scorers: scorerNames, recordCount: size, results: results });
+  },
+
+  /* ───────────────── 对齐报告（规则 2 + 7）───────────────── */
+  alignReport: function () {
+    var self = this;
+    var order = [];
+    var byName = {};
+    var pairs = {};   // name -> { agree, disagree }，按 (trace, name) 取双方最新一条比对
+    this._traces.forEach(function (t) {
+      var slot = {};
+      t.assessments.forEach(function (a) {
+        if (a.kind !== 'feedback') return;                      // 只有 feedback 进对齐；expectation / issue 不进
+        if (a.source !== 'LLM_JUDGE' && a.source !== 'HUMAN') return;
+        if (!byName[a.name]) {
+          byName[a.name] = { judgeName: a.name, humanSamples: 0, judgeSamples: 0, agree: 0, disagree: 0, agreement: null };
+          order.push(a.name);
+          pairs[a.name] = { agree: 0, disagree: 0 };
+        }
+        if (a.source === 'LLM_JUDGE') byName[a.name].judgeSamples += 1;
+        else byName[a.name].humanSamples += 1;
+        // 同名并排：同一 trace 上，人类最新一条 vs judge 最新一条
+        if (!slot[a.name]) slot[a.name] = { judge: null, human: null };
+        slot[a.name][a.source === 'LLM_JUDGE' ? 'judge' : 'human'] = a;
+      });
+      Object.keys(slot).forEach(function (name) {
+        var s = slot[name];
+        if (!s.judge || !s.human) return;
+        if (s.judge.value === s.human.value) pairs[name].agree += 1; else pairs[name].disagree += 1;
+      });
+    });
+    var out = [];
+    order.forEach(function (name) {
+      var e = byName[name];
+      if (e.judgeSamples === 0) return;                          // 只按 judge 名出报告
+      e.agree = pairs[name].agree;
+      e.disagree = pairs[name].disagree;
+      var tot = e.agree + e.disagree;
+      e.agreement = tot ? e.agree / tot : null;
+      out.push(e);
+    });
+    return out;
+  },
+
+  /* ───────────────── 供页面渲染 ───────────────── */
+
+  state: function () {
+    var self = this;
+    var traces = this._traces.map(function (t) {
+      var c = { judge: 0, human: 0, business: 0, expectation: 0, issue: 0 };
+      t.assessments.forEach(function (a) {
+        if (a.kind === 'expectation') c.expectation += 1;
+        else if (a.kind === 'issue') c.issue += 1;
+        else if (a.source === 'LLM_JUDGE') c.judge += 1;
+        else if (a.channel === '业务系统') c.business += 1;
+        else c.human += 1;
+      });
+      return {
+        id: t.id, workflow: t.workflow, bizTeam: t.bizTeam, region: t.region,
+        inputs: t.inputs, outputs: t.outputs, createdAt: t.createdAt,
+        signals: c, total: c.judge + c.human + c.business + c.expectation + c.issue,
+        datasetRefs: t.datasetRefs.slice()
+      };
+    });
+    var datasets = this._datasets.map(function (d) {
+      var dist = { 'trace回灌': 0, '手工': 0, '合成': 0 };
+      d.records.forEach(function (r) { dist[r.source] += 1; });
+      return {
+        id: d.id, name: d.name, bizTeam: d.bizTeam, tags: d.tags.slice(), versionNote: d.versionNote,
+        recordCount: d.records.length, sourceDist: dist,
+        records: d.records.map(function (r) {
+          return { id: r.id, inputs: r.inputs, expectations: r.expectations, source: r.source, traceId: r.traceId };
+        })
+      };
+    });
+    var judged = {};
+    var report = this.alignReport();
+    report.forEach(function (e) { judged[e.judgeName] = true; });
+    var unmatched = {};
+    this._traces.forEach(function (t) {
+      t.assessments.forEach(function (a) {
+        if (a.kind === 'feedback' && a.source === 'HUMAN' && !judged[a.name]) {
+          unmatched[a.name] = (unmatched[a.name] || 0) + 1;      // 不同名的人工标注：独立信号，不进对齐
+        }
+      });
+    });
+    return {
+      traces: traces,
+      datasets: datasets,
+      evalRuns: this._runs.slice(),
+      alignment: report,
+      unmatchedHuman: Object.keys(unmatched).map(function (n) { return { name: n, count: unmatched[n] }; }),
+      lastEvent: this.lastEvent
+    };
+  },
+
+  traceView: function (traceId) {
+    var t = this._trace(traceId);
+    if (!t) return null;
+    var self = this;
+    var groups = [];
+    var byName = {};
+    var expectations = [];
+    var issues = [];
+    t.assessments.forEach(function (a) {
+      if (a.kind === 'expectation') {
+        expectations.push({ id: a.id, name: a.name, value: a.value, author: a.author, createdAt: a.createdAt });
+        return;
+      }
+      if (a.kind === 'issue') {
+        issues.push({ id: a.id, name: a.name, value: a.value, author: a.author, createdAt: a.createdAt });
+        return;
+      }
+      if (!byName[a.name]) {
+        byName[a.name] = { name: a.name, judge: [], human: [], business: [], align: null, counts: null };
+        groups.push(byName[a.name]);
+      }
+      var g = byName[a.name];
+      var row = { id: a.id, value: a.value, author: a.author, rationale: a.rationale, createdAt: a.createdAt };
+      if (a.source === 'LLM_JUDGE') g.judge.push(row);
+      else if (a.channel === '业务系统') g.business.push(row);
+      else g.human.push(row);
+    });
+    groups.forEach(function (g) {
+      var j = g.judge.length ? g.judge[g.judge.length - 1] : null;
+      var h = g.human.length ? g.human[g.human.length - 1] : (g.business.length ? g.business[g.business.length - 1] : null);
+      g.align = (j && h) ? (j.value === h.value ? '一致' : '不一致') : null;
+      g.counts = { judge: g.judge.length, human: g.human.length, business: g.business.length };
+    });
+    return {
+      id: t.id, workflow: t.workflow, bizTeam: t.bizTeam, region: t.region,
+      inputs: t.inputs, outputs: t.outputs, createdAt: t.createdAt,
+      spans: t.spans, datasetRefs: t.datasetRefs.slice(), judgeName: this._judgeName(t.workflow),
+      groups: groups, expectations: expectations, issues: issues
+    };
+  },
+
+  // 页面用的小工具（不是业务规则）
+  judgeNameFor: function (workflow) { return this._judgeName(workflow); },
+  humanReferenceVerdict: function (traceId) {
+    var t = this._trace(traceId);
+    if (!t) return null;
+    return t.truth === 1 ? '正确' : '错误';   // 本原型把人工判断当作参照标准
+  },
+
+  /* ───────────────── 内部 ───────────────── */
+  _trace: function (id) {
+    for (var i = 0; i < this._traces.length; i += 1) if (this._traces[i].id === id) return this._traces[i];
+    return null;
+  },
+  _dataset: function (id) {
+    for (var i = 0; i < this._datasets.length; i += 1) if (this._datasets[i].id === id) return this._datasets[i];
+    return null;
+  },
+  _judgeName: function (workflow) { return JUDGE_NAMES[workflow] || 'result_judge'; },
+  _recByInputs: function (ds, inputs) {
+    for (var i = 0; i < ds.records.length; i += 1) if (ds.records[i].inputs === inputs) return ds.records[i];
+    return null;
+  },
+  _expectationsOf: function (t) {
+    var out = {};
+    t.assessments.forEach(function (a) { if (a.kind === 'expectation') Object.assign(out, a.value); });
+    return out;
+  },
+  // judge 的心跳：u < 0.75 时照真值答，否则答反
+  _judge: function (truth, u) {
+    var saysCorrect = u < JUDGE_ACCURACY ? truth === 1 : truth !== 1;
+    return saysCorrect ? '正确' : '错误';
+  },
+  _add: function (t, spec) {
+    var a = {
+      id: 'a' + (++this._n.assessment), traceId: t.id, name: spec.name, kind: spec.kind,
+      source: spec.source, value: spec.value, rationale: spec.rationale,
+      author: spec.author, channel: spec.channel || null, createdAt: nowISO()
+    };
+    t.assessments.push(a);
+    return a;
+  },
+  // 每行都过才算过；失败要说清是哪一行、哪个 scorer
+  _scoreRecord: function (rec, useJudge) {
+    var t = rec.traceId ? this._trace(rec.traceId) : null;
+    var rows = [];
+    var basis = t ? 'trace 的 outputs' : '记录的 expectations（手工样本没有 outputs）';
+    var ok = t ? !isEmptyBox(t.outputs) : !isEmptyBox(rec.expectations);
+    rows.push({ scorer: 'format_valid', pass: ok, detail: '依据 ' + basis + '：' + (ok ? '非空 → 通过' : '空 → 不通过') });
+    if (useJudge) {
+      var name = t ? this._judgeName(t.workflow) : 'kyc_result_judge';
+      var truth = null;
+      if (t) truth = t.truth;
+      else if (rec.expectations && rec.expectations.verdict === '正确') truth = 1;
+      else if (rec.expectations && rec.expectations.verdict === '错误') truth = 0;
+      if (truth === null) {
+        rows.push({ scorer: name, pass: false, detail: '这条记录既没有 trace、也没有人工期望值：judge 拿不到可对照的真值，只能判不通过' });
+      } else {
+        var key = (t ? 'trace:' + t.id : 'record:' + rec.id);
+        var idx = this._judgeCount[key] || 0;
+        var v = this._judge(truth, unitSeed('judge|' + JUDGE_SALT + '|' + (t ? t.id : rec.id) + '|' + idx));
+        this._judgeCount[key] = idx + 1;
+        if (t) {
+          this._add(t, {
+            name: name, kind: 'feedback', source: 'LLM_JUDGE', value: v,
+            rationale: RATIONALE[v], author: name, channel: null
+          });
+        }
+        rows.push({
+          scorer: name, pass: v === '正确',
+          detail: 'judge 第 ' + (idx + 1) + ' 次判定「' + v + '」' +
+            (t ? '，判定已回写到 ' + t.id : '（这条记录没有 trace，判定无处回写）')
+        });
+      }
+    }
+    return {
+      recordId: rec.id, inputs: rec.inputs, traceId: rec.traceId, scorers: rows,
+      passed: rows.every(function (r) { return r.pass; })
+    };
+  },
+  _failText: function (results) {
+    var bad = [];
+    results.forEach(function (r, i) {
+      r.scorers.forEach(function (s) {
+        if (!s.pass) bad.push('第 ' + (i + 1) + ' 行（' + r.inputs + '）scorer ' + s.scorer + ' 不通过：' + s.detail);
+      });
+    });
+    return bad.join('；');
+  },
+  _touch: function (ds) {
+    if (ds.tags.indexOf('v0.1') < 0) ds.tags.push('v0.1');
+    ds.versionNote = 'v0.1 · 最近改动 ' + localHMS() + '（OSS 无版本 API：版本只能靠 tags / 备注表达）';
+  },
+  _fmt: function (v) {
+    if (v === null || v === undefined) return '—';
+    if (typeof v !== 'object') return String(v);
+    var parts = [];
+    Object.keys(v).forEach(function (k) { parts.push(k + ': ' + v[k]); });
+    return parts.length ? '{ ' + parts.join('、') + ' }' : '{}';
+  },
+  _event: function (ok, note, payload) {
+    this.lastEvent = { ok: ok, note: note, at: nowISO() };
+    var out = { ok: ok, note: note };
+    if (payload) Object.keys(payload).forEach(function (k) { out[k] = payload[k]; });
+    return out;
+  },
+  _reject: function (what, reason) {
+    return this._event(false, '无法' + what + '：' + reason, { reason: reason });
+  }
+};
+/* MODEL-END */
+
+/* =====================================================================================
+   页面薄壳：只调用 QualityModel，业务规则一条都不在这里
+   ===================================================================================== */
+
+/* SAMPLES-BEGIN */
+var KYC_SAMPLES = [
+  { inputs: '身份证 44****1234 ｜ 自拍活体通过 ｜ 申报姓名 李明 ｜ 渠道 APP', outputs: { '判定': '通过', '比对分': 0.94 } },
+  { inputs: '护照 E88****21 ｜ 自拍活体通过 ｜ 申报姓名 NGUYEN THI HOA ｜ 渠道 小程序', outputs: { '判定': '通过', '比对分': 0.88 } },
+  { inputs: '身份证 13****0092 ｜ 自拍活体失败 · 补拍 2 次 ｜ 申报姓名 王强 ｜ 渠道 网银', outputs: { '判定': '拒绝', '比对分': 0.41 } },
+  { inputs: '驾照 D66****77 ｜ 自拍活体通过 ｜ 申报姓名 张伟 ｜ 渠道 代理人', outputs: { '判定': '通过', '比对分': 0.91 } },
+  { inputs: '身份证 51****3341 ｜ 自拍活体通过 ｜ 申报姓名 陈晓 ｜ 渠道 H5', outputs: { '判定': '通过', '比对分': 0.83 } },
+  { inputs: '身份证 36****7788 ｜ 自拍活体通过 ｜ 申报姓名 刘芳 ｜ 渠道 柜面', outputs: { '判定': '拒绝', '比对分': 0.52 } }
+];
+var PAYSLIP_SAMPLES = [
+  { inputs: '工资单 2026-07 ｜ 汇丰银行 ｜ OCR 置信度 0.91 ｜ 渠道 批量导入', outputs: { '月收入': 12800, '币种': 'HKD' } },
+  { inputs: '工资单 2026-07 ｜ 中银香港 ｜ OCR 置信度 0.63 ｜ 渠道 H5', outputs: { '月收入': 9600, '币种': 'HKD' } },
+  { inputs: '工资单 2026-06 ｜ 渣打银行 ｜ 手写补录 ｜ 渠道 APP', outputs: { '月收入': 15200, '币种': 'HKD' } }
+];
+var MANUAL_SAMPLES = [
+  { inputs: '历史单据 #K-1042 ｜ KYC 核验件 ｜ 身份证 44****9981 ｜ 自拍活体通过', expectations: { verdict: '正确' } },
+  { inputs: '历史单据 #K-1043 ｜ KYC 核验件 ｜ 护照 E77****08 ｜ 自拍活体失败 · 补拍 1 次', expectations: { verdict: '错误' } }
+];
+/* SAMPLES-END */
+
+var model = new QualityModel();
+var sel = { trace: null, dataset: 'ds1' };
+var hl = { touched: {}, fresh: {} };
+var hlTimer = null;
+var notice = null;
+var guide = null;
+var pending = null;
+var cursors = { kyc: 0, payslip: 0, manual: 0, issue: 0 };
+
+var $ = function (id) { return document.getElementById(id); };
+var esc = function (s) {
+  return String(s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  });
+};
+var fmtObj = function (v) {
+  if (!v || !Object.keys(v).length) return '<span class="faint">空</span>';
+  return esc(Object.keys(v).map(function (k) { return k + ': ' + v[k]; }).join('、'));
+};
+var hhmmss = function (iso) {
+  var d = new Date(iso);
+  var p = function (n) { return (n < 10 ? '0' : '') + n; };
+  return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+};
+
+/* ── 页面能触发的模型动作（动作区与演练共用同一批函数）──
+   这些函数只负责把「选中项」换算成模型参数；判定与拒绝一律由 QualityModel 负责，
+   这样「没选中 trace」这类错误只会在模型层产生一条拒绝说明，页面不会自己编错误文案 */
+function selView() { return model.traceView(sel.trace); }
+var A = {
+  kyc: function (i) { var s = KYC_SAMPLES[i % KYC_SAMPLES.length]; return model.recordTrace({ workflow: 'KYC 身份核验', bizTeam: 'Risk-PH', region: 'PH', inputs: s.inputs, outputs: s.outputs }); },
+  payslip: function (i) { var s = PAYSLIP_SAMPLES[i % PAYSLIP_SAMPLES.length]; return model.recordTrace({ workflow: 'Payslip 收入解析', bizTeam: 'Risk-PH', region: 'PH', inputs: s.inputs, outputs: s.outputs }); },
+  judge: function () { var v = selView(); return model.runJudge(sel.trace, v ? v.judgeName : null); },
+  annotate: function (same) { var v = selView(); return model.humanAnnotate(sel.trace, same ? (v ? v.judgeName : null) : OTHER_HUMAN_NAME, model.humanReferenceVerdict(sel.trace), '标注员 · 陈'); },
+  expectation: function () { return model.logExpectation(sel.trace, { verdict: model.humanReferenceVerdict(sel.trace) }, '标注员 · 陈'); },
+  expectationByLLM: function () { return model.logExpectationByLLM(sel.trace, { verdict: '正确' }); },
+  business: function (verdict) { return model.businessFeedback(sel.trace, verdict, '业务方 · Risk-PH'); },
+  issue: function () { return model.logIssue(sel.trace, ISSUE_LABELS[cursors.issue++ % ISSUE_LABELS.length]); },
+  promote: function () { return model.promoteToDataset(sel.trace, sel.dataset); },
+  manual: function (i) { var s = MANUAL_SAMPLES[i % MANUAL_SAMPLES.length]; return model.addManualRecord(sel.dataset, s.inputs, s.expectations); },
+  gate: function (set) { return model.runGate(sel.dataset, set); }
+};
+
+/* ── 快照 / 差异：用于「变化处高亮」── */
+function snapshot() {
+  var S = model.state();
+  var m = {};
+  S.traces.forEach(function (t) {
+    m['trace:' + t.id] = [t.signals.judge, t.signals.human, t.signals.business, t.signals.expectation, t.signals.issue, t.datasetRefs.join(',')].join('|');
+  });
+  S.datasets.forEach(function (d) {
+    m['dataset:' + d.id] = d.recordCount + '|' + d.records.map(function (r) { return r.id; }).join(',');
+    d.records.forEach(function (r) { m['record:' + r.id] = r.id; });
+  });
+  S.evalRuns.forEach(function (r) { m['run:' + r.id] = r.passed ? 'pass' : 'fail'; });
+  S.alignment.forEach(function (a) { m['align:' + a.judgeName] = [a.humanSamples, a.judgeSamples, a.agree, a.disagree].join('|'); });
+  return m;
+}
+function begin() { pending = { notes: [], failed: false, reason: null, hl: {} }; }
+function call(fn) {
+  var before = snapshot();
+  var res = fn();
+  var after = snapshot();
+  Object.keys(after).forEach(function (k) {
+    if (!(k in before)) { pending.hl[k] = 1; hl.fresh[k] = 1; }
+    else if (before[k] !== after[k]) pending.hl[k] = 1;
+  });
+  if (model.lastEvent && model.lastEvent.note) pending.notes.push(model.lastEvent.note);
+  if (!res || !res.ok) {
+    pending.failed = true;
+    pending.reason = (res && res.reason) || '（没有返回结果）';
+  }
+  return res || { ok: false, reason: '（没有返回结果）' };
+}
+function end(prefix, text) {
+  var t = text || pending.notes[pending.notes.length - 1] || '（没有动作）';
+  // 成功时用按钮名做前缀（说明点了哪个按钮）；被拒时模型自己的说明已经点了动作名，不再叠加前缀
+  notice = { ok: !pending.failed, text: (pending.failed || !prefix) ? t : prefix + '：' + t, reason: pending.failed ? pending.reason : null };
+  hl.touched = pending.hl;
+  pending = null;
+  if (hlTimer) clearTimeout(hlTimer);
+  hlTimer = setTimeout(function () { hl = { touched: {}, fresh: {} }; hlTimer = null; render(); }, 1500);
+  render();
+}
+
+/* ── 渲染 ── */
+function mark(key) { return hl.fresh[key] ? '<span class="up">↑</span>' : ''; }
+function hlClass(key) { return (hl.touched[key] || hl.fresh[key]) ? 'hl' : ''; }
+function dsName(S, id) {
+  for (var i = 0; i < S.datasets.length; i += 1) if (S.datasets[i].id === id) return S.datasets[i].name;
+  return id;
+}
+
+function render() {
+  var S = model.state();
+  renderNotice();
+  renderTraces(S);
+  renderDetail(S);
+  renderDatasets(S);
+  renderDsRecords(S);
+  renderRuns(S);
+  renderAlignment(S);
+  renderSelLine(S);
+  renderGuide(S);
+}
+
+function renderNotice() {
+  var el = $('notice');
+  if (!notice) {
+    el.className = 'notice';
+    el.innerHTML = '<div class="k">刚刚发生了什么</div><div class="v faint">还没点过按钮。可以随便点，或从最下面的「引导式演练」按顺序来。</div>';
+    return;
+  }
+  el.className = 'notice' + (notice.ok ? '' : ' bad');
+  el.innerHTML = '<div class="k">刚刚发生了什么' + (notice.ok ? '' : ' · 这次动作被拒绝了') + '</div><div class="v">' + esc(notice.text) + '</div>';
+}
+
+function renderTraces(S) {
+  $('traceCnt').textContent = S.traces.length ? '· ' + S.traces.length + ' 条' : '· 还没有';
+  if (!S.traces.length) {
+    $('traces').innerHTML = '<p class="empty">还没有 trace。点「落一条 KYC 请求」开始。</p>';
+    return;
+  }
+  var head = '<tr><th>ID</th><th>场景</th><th>业务团队</th><th>区域</th>' +
+    '<th class="c">信号数 judge·人·业务·期望·问题</th><th>是否已进评测集</th></tr>';
+  var rows = S.traces.map(function (t) {
+    var cls = ['click'];
+    if (t.id === sel.trace) cls.push('sel');
+    var h = hlClass('trace:' + t.id);
+    if (h) cls.push(h);
+    var c = t.signals;
+    var inDs = t.datasetRefs.length
+      ? t.datasetRefs.map(function (id) { return esc(dsName(S, id)); }).join('、')
+      : '<span class="faint">未进集</span>';
+    return '<tr class="' + cls.join(' ') + '" data-key="trace:' + t.id + '">' +
+      '<td class="mono">' + mark('trace:' + t.id) + t.id + '</td>' +
+      '<td>' + esc(t.workflow) + '</td>' +
+      '<td>' + esc(t.bizTeam) + '</td>' +
+      '<td>' + esc(t.region) + '</td>' +
+      '<td class="c mono">' + c.judge + ' · ' + c.human + ' · ' + c.business + ' · ' + c.expectation + ' · ' + c.issue + '</td>' +
+      '<td>' + inDs + '</td></tr>';
+  }).join('');
+  $('traces').innerHTML = '<table class="t"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>';
+}
+
+function renderDetail(S) {
+  var v = model.traceView(sel.trace);
+  var el = $('detail');
+  if (!v) {
+    $('selHint').textContent = '· 未选中';
+    el.innerHTML = '<p class="empty">还没有选中任何 trace。落一条请求会自动选中；也可以点上面表里的任意一行。</p>';
+    return;
+  }
+  $('selHint').textContent = '· ' + v.id + '（点左侧 trace 表可切换）';
+  var spans = v.spans.map(function (s) {
+    return '<span class="span"><b>' + s.type + '</b>' + esc(s.name) + '</span>';
+  }).join('<span class="arrow">→</span>');
+  var refs = v.datasetRefs.length
+    ? v.datasetRefs.map(function (id) { return esc(dsName(S, id)); }).join('、')
+    : '<span class="faint">未进评测集</span>';
+
+  var rows = v.groups.map(function (g) {
+    var cell = function (list) {
+      if (!list.length) return '<span class="faint">—</span>';
+      return list.map(function (r) {
+        return '<div><b>' + esc(r.value) + '</b> <span class="faint micro">' + esc(r.author) + '</span></div>';
+      }).join('');
+    };
+    var align = g.align
+      ? '<span class="b ' + (g.align === '一致' ? 'ok' : 'warn') + '">' + g.align + '</span>'
+      : '<span class="faint micro">无同名对</span>';
+    return '<tr><td class="mono">' + esc(g.name) + '</td>' +
+      '<td>' + cell(g.judge) + '</td><td>' + cell(g.human) + '</td><td>' + cell(g.business) + '</td>' +
+      '<td class="c">' + align + '</td></tr>';
+  }).join('');
+
+  var signalBlock = v.groups.length
+    ? '<table class="t"><thead><tr><th>名称</th><th>LLM judge</th><th>人（平台）</th><th>业务系统</th><th class="c">同名比对</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    : '<p class="empty">这条 trace 上还没有任何判定/反馈信号。</p>';
+
+  var expBlock = v.expectations.length
+    ? '<table class="t"><thead><tr><th>名称</th><th>值（ground truth）</th><th>标注人</th><th>时间</th></tr></thead><tbody>' +
+      v.expectations.map(function (e) {
+        return '<tr><td class="mono">' + esc(e.name) + '</td><td>' + fmtObj(e.value) + '</td><td>' + esc(e.author) + '</td><td class="mono">' + hhmmss(e.createdAt) + '</td></tr>';
+      }).join('') + '</tbody></table>'
+    : '<p class="empty">还没有期望值。期望值只能由人写（机器写会被拒）。</p>';
+
+  var issueBlock = v.issues.length
+    ? '<table class="t"><thead><tr><th>问题</th><th>状态</th><th>来源</th><th>时间</th></tr></thead><tbody>' +
+      v.issues.map(function (i) {
+        return '<tr><td>' + esc(i.name) + '</td><td>' + esc(i.value) + '</td><td class="mono">' + esc(i.author) + '</td><td class="mono">' + hhmmss(i.createdAt) + '</td></tr>';
+      }).join('') + '</tbody></table>'
+    : '';
+
+  el.innerHTML =
+    '<p class="kv"><b>概览</b>' + v.id + ' · ' + esc(v.workflow) + ' · ' + esc(v.bizTeam) + ' · 区域 ' + esc(v.region) +
+      ' · ' + hhmmss(v.createdAt) + ' · 已进集：' + refs + '</p>' +
+    '<p class="kv"><b>spans</b></p><p class="spans">' + spans + '</p>' +
+    '<p class="kv"><b>输入</b>' + esc(v.inputs) + '</p>' +
+    '<p class="kv"><b>输出</b>' + fmtObj(v.outputs) + '</p>' +
+    '<p class="kv gap"><b>信号（按名称并排：同名的人类反馈与 judge 反馈放在一行，肉眼比一致/不一致）</b></p>' +
+    signalBlock +
+    '<p class="kv gap"><b>期望值（expectation）</b></p>' + expBlock +
+    (issueBlock ? '<p class="kv gap"><b>问题（issue）</b></p>' + issueBlock : '');
+}
+
+function renderDatasets(S) {
+  $('dsCnt').textContent = '· ' + S.datasets.length + ' 个';
+  var head = '<tr><th>名称</th><th>归属团队</th><th class="c">记录数</th><th>来源分布</th><th>标签 tags</th><th>备注 versionNote</th></tr>';
+  var rows = S.datasets.map(function (d) {
+    var cls = ['click'];
+    if (d.id === sel.dataset) cls.push('sel');
+    var h = hlClass('dataset:' + d.id);
+    if (h) cls.push(h);
+    var dist = d.sourceDist;
+    return '<tr class="' + cls.join(' ') + '" data-key="dataset:' + d.id + '">' +
+      '<td class="mono nowrap">' + mark('dataset:' + d.id) + esc(d.name) + '<br><span class="faint micro">' + d.id + (d.id === sel.dataset ? ' · 已选中' : '') + '</span></td>' +
+      '<td class="nowrap">' + esc(d.bizTeam) + '</td>' +
+      '<td class="c mono">' + d.recordCount + '</td>' +
+      '<td><span class="b">trace回灌 ' + dist['trace回灌'] + '</span> <span class="b">手工 ' + dist['手工'] + '</span> <span class="b">合成 ' + dist['合成'] + '</span></td>' +
+      '<td class="mono micro">' + d.tags.map(esc).join(' · ') + '</td>' +
+      '<td class="micro">' + esc(d.versionNote) + '</td></tr>';
+  }).join('');
+  $('datasets').innerHTML = '<table class="t"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>';
+}
+
+function renderDsRecords(S) {
+  var ds = null;
+  S.datasets.forEach(function (d) { if (d.id === sel.dataset) ds = d; });
+  var el = $('dsRecords');
+  if (!ds) { el.innerHTML = ''; return; }
+  var head = '<tr><th>记录 ID</th><th>inputs</th><th>expectations（ground truth）</th><th>来源 source</th><th>traceId</th><th>行内判定</th></tr>';
+  var rows = ds.records.map(function (r) {
+    var cls = hlClass('record:' + r.id);
+    var linked = r.traceId
+      ? '<span class="mono">' + r.traceId + '</span>'
+      : '<span class="b warn">无 trace</span>';
+    var basis = r.traceId ? 'format_valid ← trace.outputs' : 'format_valid ← record.expectations';
+    var exp = Object.keys(r.expectations || {}).length ? fmtObj(r.expectations) : '<span class="faint">空（没有 ground truth）</span>';
+    return '<tr class="' + cls + '">' +
+      '<td class="mono">' + mark('record:' + r.id) + r.id + '</td>' +
+      '<td class="micro">' + esc(r.inputs) + '</td>' +
+      '<td>' + exp + '</td>' +
+      '<td><span class="b">' + esc(r.source) + '</span></td>' +
+      '<td>' + linked + '</td>' +
+      '<td class="micro faint">' + esc(basis) + '</td></tr>';
+  }).join('');
+  el.innerHTML = '<p class="kv gap"><b>选中评测集的记录（' + ds.recordCount + ' 条）</b></p>' +
+    (ds.records.length ? '<table class="t"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>'
+      : '<p class="empty">这个评测集还没有记录。手工样本或 trace 回灌都可以进集。</p>');
+}
+
+function renderRuns(S) {
+  $('runCnt').textContent = S.evalRuns.length ? '· ' + S.evalRuns.length + ' 次' : '· 还没有';
+  if (!S.evalRuns.length) {
+    $('runs').innerHTML = '<p class="empty">还没有跑过门禁。空评测集上的门禁会被直接拒绝（空集的「全部通过」是假通过）。</p>';
+    return;
+  }
+  var head = '<tr><th>时间</th><th>数据集</th><th>scorer 组合</th><th class="c">结果</th><th>失败原因（哪一行 · 哪个 scorer）</th></tr>';
+  var list = S.evalRuns.slice().reverse();
+  var rows = list.map(function (r) {
+    var cls = hlClass('run:' + r.id);
+    var res = r.passed ? '<span class="b ok">通过</span>' : '<span class="b warn">失败</span>';
+    return '<tr class="' + cls + '">' +
+      '<td class="mono">' + hhmmss(r.at) + '<br><span class="faint micro">' + r.id + '</span></td>' +
+      '<td class="micro">' + esc(dsName(S, r.datasetId)) + '</td>' +
+      '<td class="mono micro">' + r.scorers.map(esc).join(' + ') + '</td>' +
+      '<td class="c">' + res + '</td>' +
+      '<td class="micro">' + (r.passed ? '<span class="faint">—</span>' : esc(r.failedReason)) + '</td></tr>';
+  }).join('');
+  $('runs').innerHTML = '<table class="t"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>';
+}
+
+function renderAlignment(S) {
+  var list = S.alignment;
+  $('alignCnt').textContent = list.length ? '· ' + list.length + ' 个 judge' : '· 还没有 judge 样本';
+  var el = $('alignment');
+  if (!list.length) {
+    el.innerHTML = '<p class="empty">还没有 judge 判定，对齐报告是空的。跑一次 judge 就有了。</p>';
+  } else {
+    var head = '<tr><th>judge 名</th><th class="c">人类样本数</th><th class="c">judge 样本数</th>' +
+      '<th class="c">一致数</th><th class="c">不一致数</th><th class="c">一致率</th></tr>';
+    var rows = list.map(function (e) {
+      var cls = hlClass('align:' + e.judgeName);
+      var rate = e.agreement === null ? '<span class="faint">—</span>' : e.agreement.toFixed(2);
+      return '<tr class="' + cls + '">' +
+        '<td class="mono">' + mark('align:' + e.judgeName) + esc(e.judgeName) + '</td>' +
+        '<td class="c mono">' + e.humanSamples + '</td><td class="c mono">' + e.judgeSamples + '</td>' +
+        '<td class="c mono">' + e.agree + '</td><td class="c mono">' + e.disagree + '</td>' +
+        '<td class="c mono">' + rate + '</td></tr>';
+    }).join('');
+    el.innerHTML = '<table class="t"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>';
+
+    var notes = list.map(function (e) {
+      if (e.agreement === null) {
+        return '<b>' + esc(e.judgeName) + '</b>：judge 样本 ' + e.judgeSamples + ' 条，但没有同名的人类样本 → 一致率算不出来（对齐必须先同名）。';
+      }
+      if (e.agreement < 1) {
+        return '<b>' + esc(e.judgeName) + '</b>：一致率 ' + e.agreement.toFixed(2) + ' &lt; 1 —— 需用对齐优化（如把人工判断蒸馏进 judge，或先补人工样本）。';
+      }
+      return '';
+    }).filter(function (s) { return s; });
+    var extra = S.unmatchedHuman.map(function (u) {
+      return '有 ' + u.count + ' 条人类反馈叫「' + esc(u.name) + '」，没有同名 judge → 只算独立信号，不进对齐报告。';
+    });
+    el.innerHTML += '<p class="tip gap">人类样本数含「业务系统」渠道的反馈。judge 样本数 = 该 judge 在该名称下写过的判定条数（含门禁回写的判定）。</p>' +
+      (notes.length ? '<p class="tip">' + notes.join('<br>') + '</p>' : '') +
+      (extra.length ? '<p class="tip">' + extra.join('<br>') + '</p>' : '');
+  }
+}
+
+function renderSelLine(S) {
+  var v = model.traceView(sel.trace);
+  var dname = dsName(S, sel.dataset);
+  $('selLine').innerHTML = '<b>当前选中</b> trace：' + (v ? '<span class="mono">' + v.id + '</span>（' + esc(v.workflow) + '）' : '<span class="faint">无</span>') +
+    ' · 评测集：' + esc(dname);
+}
+
+/* ── 自由探索按钮 ── */
+var ACTIONS = {
+  'kyc': function () { begin(); var r = call(function () { return A.kyc(cursors.kyc++ % KYC_SAMPLES.length); }); if (r.ok) sel.trace = r.traceId; end('落一条 KYC 请求'); },
+  'payslip': function () { begin(); var r = call(function () { return A.payslip(cursors.payslip++ % PAYSLIP_SAMPLES.length); }); if (r.ok) sel.trace = r.traceId; end('落一条 Payslip 请求'); },
+  'judge': function () { begin(); call(function () { return A.judge(); }); end('跑 judge（LLM）'); },
+  'annotate-same': function () { begin(); call(function () { return A.annotate(true); }); end('人工标注（同名）'); },
+  'annotate-other': function () { begin(); call(function () { return A.annotate(false); }); end('人工标注（不同名）'); },
+  'expect': function () { begin(); call(function () { return A.expectation(); }); end('记录期望值（人）'); },
+  'expect-llm': function () { begin(); call(function () { return A.expectationByLLM(); }); end('记录期望值（LLM·应被拒绝）'); },
+  'biz-ok': function () { begin(); call(function () { return A.business('认可'); }); end('业务反馈 · 认可'); },
+  'biz-no': function () { begin(); call(function () { return A.business('驳回'); }); end('业务反馈 · 驳回'); },
+  'issue': function () { begin(); call(function () { return A.issue(); }); end('记一个问题'); },
+  'promote': function () { begin(); call(function () { return A.promote(); }); end('把选中 trace 提升进评测集'); },
+  'manual': function () { begin(); call(function () { return A.manual(cursors.manual++ % MANUAL_SAMPLES.length); }); end('手工加一条样本'); },
+  'gate-det': function () { begin(); call(function () { return A.gate('确定性'); }); end('跑门禁（确定性）'); },
+  'gate-llm': function () { begin(); call(function () { return A.gate('确定性 + LLM judge'); }); end('跑门禁（确定性 + LLM judge）'); },
+  'reset': function () { model.reset(); sel = { trace: null, dataset: 'ds1' }; cursors = { kyc: 0, payslip: 0, manual: 0, issue: 0 }; notice = null; hl = { touched: {}, fresh: {} }; guide = freshGuide(guide ? guide.tab : 'g1'); render(); }
+};
+
+var GROUPS = [
+  { title: '落请求', items: [
+    { id: 'kyc', label: '落一条 KYC 请求', tip: '录入一条 KYC 身份核验请求（带 spans，隐藏真值随请求落库）' },
+    { id: 'payslip', label: '落一条 Payslip 请求', tip: '录入一条工资单收入解析请求' }
+  ] },
+  { title: '质量信号（都挂在选中的 trace 上）', items: [
+    { id: 'judge', label: '跑 judge（LLM）', tip: '让 LLM judge 给一次判定；同一条 trace 再跑一次可能翻转' },
+    { id: 'annotate-same', label: '人工标注（同名）', tip: '用与 judge 完全相同的名称写人工反馈 → 会进对齐报告' },
+    { id: 'annotate-other', label: '人工标注（不同名）', tip: '用「人工复核」这个名字写反馈 → 只算独立信号，不进对齐报告' },
+    { id: 'expect', label: '记录期望值（人）', tip: '人工把 ground truth 写到 trace 上；回灌评测集时会带过去' },
+    { id: 'expect-llm', label: '记录期望值（LLM·应被拒绝）', tip: '以 LLM 来源写期望值：模型必须拒绝' },
+    { id: 'biz-ok', label: '业务反馈 · 认可', tip: '业务系统渠道回写：认可该判定（同名，算人类样本）' },
+    { id: 'biz-no', label: '业务反馈 · 驳回', tip: '业务系统渠道回写：驳回该判定（同名，算人类样本）' },
+    { id: 'issue', label: '记一个问题', tip: '在 trace 上登记一个 issue（问题发现管道）' }
+  ] },
+  { title: '评测集与门禁', items: [
+    { id: 'promote', label: '把选中 trace 提升进评测集', tip: 'trace 回灌成评测集记录，按 inputs 去重' },
+    { id: 'manual', label: '手工加一条样本', tip: '手工样本入集：traceId = null' },
+    { id: 'gate-det', label: '跑门禁（确定性）', tip: '只用 format_valid：outputs（或 expectations）非空即通过' },
+    { id: 'gate-llm', label: '跑门禁（确定性 + LLM judge）', tip: '多一个 LLM judge scorer：同一数据集重跑可能翻转' }
+  ] },
+  { title: '其他', items: [
+    { id: 'reset', label: '重置', tip: '回到初始状态（0 条 trace + 1 个空评测集）' }
+  ] }
+];
+
+function renderGroups() {
+  $('groups').innerHTML = GROUPS.map(function (g) {
+    return '<div class="group"><div class="glabel">' + esc(g.title) + '</div><div class="row">' +
+      g.items.map(function (it) {
+        return '<button class="btn" data-act="' + it.id + '" title="' + esc(it.tip) + '">' + esc(it.label) + '</button>';
+      }).join('') + '</div></div>';
+  }).join('');
+}
+
+/* ── 引导式演练 ── */
+var GUIDES = [
+  {
+    id: 'g1', tab: '1 · 信号全集', title: 'Tab 1 · 一条请求的质量信号全集（happy path）',
+    setup: '设置：只落 1 条 KYC 请求，然后往同一条 trace 上叠三种来源的信号——机器 judge 判定、业务方（业务系统渠道、同名）的认可、人工写的期望值。',
+    watch: '要观察：判定 / 反馈 / 真值三种角色全部挂在同一个锚点（trace）上，靠 Assessment 的 kind + source 区分，不必为每种质量信号单建一套表。看 b · 详情里的信号表（judge 与人类并排）和期望值区。',
+    steps: [
+      { label: '落一条 KYC 请求', hint: '录入后自动选中这条 trace。', run: function () { var r = call(function () { return A.kyc(0); }); if (r.ok) sel.trace = r.traceId; return null; } },
+      { label: '跑 judge（LLM）', run: function () { call(function () { return A.judge(); }); return null; } },
+      { label: '业务反馈 · 认可（同名）', run: function () { call(function () { return A.business('认可'); }); return null; } },
+      { label: '记录期望值（人）', run: function () { call(function () { return A.expectation(); }); return { text: '期望值已由人工写到 trace 上。它和 judge 判定、业务反馈住在同一个锚点上，但角色不同：judge 是「判定」，期望值是「真值」，业务反馈是「渠道回写的人类判定」。' }; } }
+    ]
+  },
+  {
+    id: 'g2', tab: '2 · 人 vs judge 对齐', title: 'Tab 2 · 人 vs judge 对齐（同名规则）',
+    setup: '设置：落 3 条 KYC 请求 → 每条跑一次 judge → 对其中 2 条用「同名」标注、第 3 条用「不同名」标注（人工复核）。演示数据把这三条的隐藏真值都安排成「结果正确」，人工判断在本原型里作为参照标准。',
+    watch: '要观察：对齐报告只统计同名（kyc_result_judge）的样本 → 2 对；第 3 条叫「人工复核」，它不进对齐报告（这就是「对齐必须先同名」的解释）。一致率通常 &lt; 1：judge 与人不一致，需要对齐优化。',
+    steps: [
+      { label: '落 3 条 KYC 请求', run: function () {
+        var ids = [];
+        for (var i = 0; i < 3; i += 1) { var r = call(function () { return A.kyc(i); }); if (r.ok) ids.push(r.traceId); }
+        sel.trace = ids[0];
+        return { text: '已落 ' + ids.join(' / ') + '，并选中 ' + ids[0] + '。' };
+      } },
+      { label: '对 3 条 trace 各跑一次 judge', run: function () {
+        var vs = [];
+        model.state().traces.forEach(function (t) {
+          sel.trace = t.id;
+          var r = call(function () { return A.judge(); });
+          if (r.ok) vs.push(t.id + ' ' + r.verdict);
+        });
+        return { text: 'judge 判定：' + vs.join(' · ') + '（判定写回了各自的 trace）' };
+      } },
+      { label: '对 t1、t2 用「同名」标注', run: function () {
+        var ts = model.state().traces;
+        [ts[0], ts[1]].forEach(function (t) { sel.trace = t.id; call(function () { return A.annotate(true); }); });
+        return { text: '两条都用了 judge 的名字 kyc_result_judge → 它们会进对齐报告（与 judge 的判定并排比对）。' };
+      } },
+      { label: '对 t3 用「不同名」标注（人工复核）', run: function () {
+        var ts = model.state().traces;
+        sel.trace = ts[2].id;
+        call(function () { return A.annotate(false); });
+        sel.trace = ts[0].id;
+        return { text: '「人工复核」这个名字没有对应的 judge —— 这条只算 t3 的独立信号，不进对齐报告（哪怕它给的值和 judge 一样）。看 e · 对齐报告：一致率只算那 2 对同名样本。' };
+      } }
+    ]
+  },
+  {
+    id: 'g3', tab: '3 · 门禁与假失败', title: 'Tab 3 · 门禁与假失败（最关键）',
+    setup: '设置：落 3 条 trace → 各跑一次 judge → 全部回灌进评测集 → 跑门禁（确定性 + LLM judge）→ 再跑一次同样的门禁 → 最后跑一次确定性门禁。演示数据经过挑选，让翻转在第一次点击就出现；机制本身是真实的伪随机（种子 = traceId + 该 trace 被 judge 评过的次数）。',
+    watch: '要观察：同一个数据集、零改动，第一次门禁和第二次门禁的结果可能不同——失败来自 judge 自己的随机性，不是数据变了。二分布尔门禁（任一行任一 scorer 不过 = 整体失败）× 非确定性 judge = 假失败的结构性来源；确定性 scorer 则永远稳定。',
+    steps: [
+      { label: '落 3 条 KYC 请求', run: function () {
+        var ids = [];
+        for (var i = 0; i < 3; i += 1) { var r = call(function () { return A.kyc(i); }); if (r.ok) ids.push(r.traceId); }
+        sel.trace = ids[0];
+        return { text: '已落 ' + ids.join(' / ') + '。' };
+      } },
+      { label: '对 3 条 trace 各跑一次 judge', run: function () {
+        model.state().traces.forEach(function (t) { sel.trace = t.id; call(function () { return A.judge(); }); });
+        return { text: '三条都拿到了 judge 判定，判定写回各自的 trace。' };
+      } },
+      { label: '把 3 条 trace 全部提升进评测集', run: function () {
+        var out = [];
+        model.state().traces.forEach(function (t) {
+          sel.trace = t.id;
+          var r = call(function () { return A.promote(); });
+          out.push(t.id + (r.ok ? ' ✓' : ' ✗ ' + r.reason));
+        });
+        return { text: '回灌结果：' + out.join('；') };
+      } },
+      { label: '跑门禁（确定性 + LLM judge）', run: function () {
+        var r = call(function () { return A.gate('确定性 + LLM judge'); });
+        return { text: r.ok ? '第一次门禁：' + (r.passed ? '通过' : '失败') + '。（记住这个结果，下面还要再跑一次完全一样的）' : null };
+      } },
+      { label: '再跑一次同样的门禁（零改动）', run: function () {
+        var r = call(function () { return A.gate('确定性 + LLM judge'); });
+        return { text: r.ok ? '第二次门禁：' + (r.passed ? '通过' : '失败') + '。数据集一个字没改，结果却可能翻转——看 d · 门禁运行记录里两次的对比：judge 对同一条 trace 的第 N 次判定和上一次不同。' : null };
+      } },
+      { label: '跑门禁（确定性）', run: function () {
+        var r = call(function () { return A.gate('确定性'); });
+        var ts = model.state().traces;
+        if (ts.length > 1) sel.trace = ts[1].id;
+        return { text: '确定性门禁：' + (r.ok && r.passed ? '通过' : '没通过') + '。format_valid 只看记录内容是否为空，不掷骰子——所以它不会因为「judge 今天心情不好」而翻转。看 b · 详情里 ' + (ts[1] ? ts[1].id : '某条 trace') + ' 的信号列表：同一条 trace 被 judge 评过多次，判定并不总是一样。' };
+      } }
+    ]
+  },
+  {
+    id: 'g4', tab: '4 · 上线前冷启动', title: 'Tab 4 · 上线前冷启动（没有 trace 的门禁）',
+    setup: '设置：模拟模型上线前的场景——评测集是空的，直接跑门禁；然后手工补 2 条历史单据样本，再跑一次。',
+    watch: '要观察：门禁可以没有 trace 就跑，但「一切挂 trace」的假设在评测集这一层有结构例外——手工记录的 traceId 是 null，来源分布里「trace回灌」= 0（代表性弱、血缘缺失）。另外注意确定性 scorer 在没有 outputs 的手工记录上改用什么内容来评。',
+    steps: [
+      { label: '跑门禁（确定性）', run: function () {
+        var r = call(function () { return A.gate('确定性'); });
+        return { text: r.ok ? '居然跑起来了？' : '空评测集上跑门禁被拒绝——这正是要观察的第一点：空集的「每一行都通过」在逻辑上恒真，那是假通过，所以模型层直接拒绝运行。' };
+      } },
+      { label: '手工加 2 条历史单据样本', run: function () {
+        call(function () { return A.manual(0); });
+        call(function () { return A.manual(1); });
+        return { text: '两条手工样本进集。看 c · 评测集的记录列表：它们的 traceId 都是「无 trace」——没有 trace 也能进评测集，这是结构例外；来源分布里「手工 2、trace回灌 0」。' };
+      } },
+      { label: '再跑门禁（确定性）', run: function () {
+        var r = call(function () { return A.gate('确定性'); });
+        return { text: '门禁' + (r.ok && r.passed ? '通过' : '没通过') + '。但看记录列表的最后一列：这两行是拿「记录的 expectations」代替 outputs 去评的（手工样本没有 outputs）——确定性 scorer 在没有 trace 的记录上评什么，是个要拍板的设计点。' };
+      } }
+    ]
+  },
+  {
+    id: 'g5', tab: '5 · 信号回流闭环', title: 'Tab 5 · 信号回流闭环（完整）',
+    setup: '设置：走一遍闭环——线上落一条有争议的 trace → 跑 judge → 业务方驳回 → 看对齐报告 → 把这条 trace 回灌进评测集 → 再跑门禁。（演示数据安排了 judge 与业务方判定相反；隐藏真值站在 judge 一侧——业务方的驳回是独立信号，不等于真值。）',
+    watch: '要观察：闭环确实通——生产 trace → 信号 → 评测集（带 traceId 血缘）→ 门禁。但有一个空档：业务方的驳回只落成 feedback，没有变成 expectation，所以回灌的记录没有 ground truth，门禁照样放行。要让争议用例真能拦住发布，必须有人把它写成期望值——这条路径要不要自动化，是要拍板的。',
+    steps: [
+      { label: '线上落一条 KYC 请求', run: function () { var r = call(function () { return A.kyc(3); }); if (r.ok) sel.trace = r.traceId; return null; } },
+      { label: '跑 judge（LLM）', run: function () { call(function () { return A.judge(); }); return null; } },
+      { label: '业务反馈 · 驳回', run: function () { call(function () { return A.business('驳回'); }); return { text: '业务方把这条判定驳回了。看 e · 对齐报告：judge 与业务方同名（kyc_result_judge）、判定相反 → 一致率 0，提示需要对齐优化。' }; } },
+      { label: '把这条 trace 提升进评测集', run: function () {
+        var r = call(function () { return A.promote(); });
+        return { text: r.ok ? '回灌完成。看 c 的记录列表：这条记录带上了 traceId 血缘，但 expectations 是空的——业务方的驳回只落成了 feedback，没有变成真值。' : null };
+      } },
+      { label: '跑门禁（确定性 + LLM judge）', run: function () {
+        var r = call(function () { return A.gate('确定性 + LLM judge'); });
+        return { text: '门禁' + (r.ok && r.passed ? '通过' : '失败') + '。争议用例进了集，却没有真值可依——门禁用的是 trace 上的隐藏真值，业务方的驳回拦不住发布。要把这类反馈变成发布门禁的依据，得有人（或流程）把它写成期望值。' };
+      } }
+    ]
+  }
+];
+
+function freshGuide(id) { var g = { tab: id, cursor: 0, results: {} }; return g; }
+function activeGuide() {
+  for (var i = 0; i < GUIDES.length; i += 1) if (GUIDES[i].id === guide.tab) return GUIDES[i];
+  return GUIDES[0];
+}
+function switchGuide(id) {
+  model.reset();
+  sel = { trace: null, dataset: 'ds1' };
+  cursors = { kyc: 0, payslip: 0, manual: 0, issue: 0 };
+  notice = null;
+  hl = { touched: {}, fresh: {} };
+  guide = freshGuide(id);
+  render();
+}
+function execStep(i) {
+  var def = activeGuide();
+  var step = def.steps[i];
+  begin();
+  var out = null;
+  out = step.run();
+  end(step.label, out && out.text ? out.text : null);
+  guide.cursor = Math.min(i + 1, def.steps.length);
+  guide.results[i] = { ok: notice.ok, text: notice.text };
+  render();
+}
+function renderGuide() {
+  if (!guide) guide = freshGuide('g1');
+  var def = activeGuide();
+  $('tabs').innerHTML = GUIDES.map(function (g) {
+    return '<button class="tab' + (g.id === guide.tab ? ' active' : '') + '" data-g="' + g.id + '">' + esc(g.tab) + '</button>';
+  }).join('');
+  var steps = def.steps.map(function (s, i) {
+    var done = i < guide.cursor;
+    var cur = i === guide.cursor;
+    var r = guide.results[i];
+    var note = r
+      ? '<p class="stepnote' + (r.ok ? '' : ' bad') + '">' + esc(r.text) + '</p>'
+      : (s.hint ? '<p class="stepnote hint">' + esc(s.hint) + '</p>' : '');
+    return '<li class="stepitem"><button class="btn step' + (done ? ' done' : '') + (cur ? ' cur' : '') +
+      '" data-step="' + i + '">' + (done ? '✓ ' : '') + esc(s.label) + '</button>' + note + '</li>';
+  }).join('');
+  $('guideBody').innerHTML =
+    '<p class="setup"><b>场景说明</b>' + esc(def.setup) + '</p>' +
+    '<p class="watch"><b>要观察</b>' + def.watch + '</p>' +
+    '<p class="micro faint" style="margin-top:14px">' + esc(def.title) + '</p>' +
+    '<ol class="steps">' + steps + '</ol>' +
+    '<button class="btn ghost" data-restart="1">重新开始这个演练（重置到初始状态）</button>';
+}
+
+/* ── 事件 ── */
+document.addEventListener('click', function (e) {
+  var stepBtn = e.target.closest ? e.target.closest('[data-step]') : null;
+  if (stepBtn) { execStep(Number(stepBtn.getAttribute('data-step'))); return; }
+  var restart = e.target.closest ? e.target.closest('[data-restart]') : null;
+  if (restart) { switchGuide(guide.tab); return; }
+  var tab = e.target.closest ? e.target.closest('[data-g]') : null;
+  if (tab) { switchGuide(tab.getAttribute('data-g')); return; }
+  var act = e.target.closest ? e.target.closest('[data-act]') : null;
+  if (act) { ACTIONS[act.getAttribute('data-act')](); return; }
+  var row = e.target.closest ? e.target.closest('tr[data-key]') : null;
+  if (row) {
+    var key = row.getAttribute('data-key');
+    if (key.indexOf('trace:') === 0) sel.trace = key.slice(6);
+    if (key.indexOf('dataset:') === 0) sel.dataset = key.slice(8);
+    render();
+  }
+});
+
+renderGroups();
+guide = freshGuide('g1');
+render();
+</script>
+</body>
+</html>

@@ -554,14 +554,14 @@ Built-in judges → Guidelines judges → Custom judges（`make_judge`）→ Cod
 | M4 | **Online Runtime / LLM Workflow**：Placeholder，待补 Workflow 画布、节点配置、调试与发布链路。**这是仓库里唯一被命名为「AI 线上应用」载体的模块**，且架构图已确认 AI Hub → Online Runtime 的资产供给关系 | `assets/shell.js:47-50`；`docs/platform/module-inventory.md:12`；`docs/platform/architecture-diagrams.md:35`；`docs/platform/diagrams/aimos-platform.architecture.json:163,370-372`；`apps/architecture/index.html:266` | Tracing + evaluate + 回归门禁 + 在线自动评估（**评估进入线上链路的唯一落点**） | **最大空白 + 最高战略价值** |
 | M5 | **Online Runtime / Agent App**：Future 空槽位，当前不做设计 | `assets/shell.js:51-54`；`docs/platform/module-inventory.md:13` | multi-turn / session judges、ConversationSimulator、Agent Server + ResponsesAgent | 空白且**主动暂缓**；但业务侧 Agent 试点已在规划（`Aimos LLM API Quota 申请.md` 提到 TH / MY 的多步决策场景） |
 | M6 | **Online Runtime / Orches Service**：Placeholder，待补服务列表视图、编排画布、版本与流量治理 | `assets/shell.js:43-46`；`docs/platform/module-inventory.md:11` | AI Gateway 的 traffic split / fallback / budget / guardrails | 空位天然属于流量治理；Aimos 已有「按服务限流、单服务超额自动降级」的承诺（`Aimos LLM API Quota 申请.md`） |
-| M7 | **Model Platform / MLFlow 桥**：内部改造并嵌入的开源 MLflow，**基线 2.21.3**（`mlflow-integration.md:5`；原型标注 `2.21.3-int`，`apps/mlflow/index.html:203`；`architecture-diagrams.md:39` 写作「基线 2.21.3 / MLflow 3.x UI」——**「3.x UI」指内部改造版的前端形态，不等于后端版本是 3.x，此处口径本身存疑，见 P-00**），承担 Tracking + Registry；**内嵌 UI 已含 Prompts 顶栏与 Traces / Evaluation 页签、Runs 表含 Dataset 列**；部署架构为 Platform BE → 内部 Managed Service 的 MLflow Tracking Server → 复用平台 S3（前缀隔离），UI 同源代理内嵌并复用平台 SSO/RBAC；容错策略（异步补录 / 重试 3 次 / 定期对账）已设计 | `docs/model-experiment/architecture/mlflow-integration.md:1-11,50-72,74-115,117-127,195-207,221-233,236-243`；`docs/platform/module-inventory.md:27`；`apps/mlflow/index.html:203,205-210,249-253,262,276`；`docs/platform/architecture-diagrams.md:32-39` | Trace / Assessment / Dataset / Prompt / LoggedModel 的承载与 UI 入口 | **现成接缝，但有版本错位（P0）**：三个 LLM 外壳页面已存在（虽为死链），四条待确认项直接对应 GenAI 入口（§8-3 log_input、§8-4 Logged Models、§8-7 内嵌 UI 权限、§8-8 功能裁剪）。**关键落差：本报告论证的 MLflow 能力对应 master @ 3.16.2.dev0，而内部实例基线是 2.21.3，相差约 10 个 minor 版本——`@mlflow.test`（≥3.14）、Review Queues（3.14）、automatic evaluation（3.14）、LoggedModel（≥3.4）全部超出 2.21.3 的能力范围。这不是配置项而是升级议题，见第 6 章 P-00 前置门** |
+| M7 | **Model Platform / MLFlow 桥**：内部改造并嵌入的开源 MLflow，**基线 2.21.3**（`mlflow-integration.md:5`；原型标注 `2.21.3-int`，`apps/mlflow/index.html:203`；`architecture-diagrams.md:39` 写作「基线 2.21.3 / MLflow 3.x UI」——**「3.x UI」指内部改造版的前端形态，不等于后端版本是 3.x，此处口径本身存疑，见 P-00**），承担 Tracking + Registry；**内嵌 UI 已含 Prompts 顶栏与 Traces / Evaluation 页签、Runs 表含 Dataset 列**；部署架构为 Platform BE → 内部 Managed Service 的 MLflow Tracking Server → 复用平台 S3（前缀隔离），UI 同源代理内嵌并复用平台 SSO/RBAC；容错策略（异步补录 / 重试 3 次 / 定期对账）已设计 | `docs/model-experiment/architecture/mlflow-integration.md:1-11,50-72,74-115,117-127,195-207,221-233,236-243`；`docs/platform/module-inventory.md:27`；`apps/mlflow/index.html:203,205-210,249-253,262,276`；`docs/platform/architecture-diagrams.md:32-39` | Trace / Assessment / Dataset / Prompt / LoggedModel 的承载与 UI 入口 | **现成接缝，但有版本错位（P0）**：三个 LLM 外壳页面已存在（虽为死链），四条待确认项直接对应 GenAI 入口（§8-3 log_input、§8-4 Logged Models、§8-7 内嵌 UI 权限、§8-8 功能裁剪）。**关键落差：本报告论证的 MLflow 能力对应 master @ 3.16.2.dev0，而内部实例基线是 2.21.3，到 ≥3.14 相隔 16 个 minor（2.21.3 → 3.14.0；至 3.16 为 18 个）——`@mlflow.test`（≥3.14）、Review Queues（3.14）、automatic evaluation（3.14）、LoggedModel（≥3.4）全部超出 2.21.3 的能力范围。这不是配置项而是升级议题，见第 6 章 P-00 前置门** |
 | M8 | **Console / User + 权限**：User 多 Biz Team + Team 内单角色（VIEWER/EDITOR/ADMIN）+ Team Dir（superadmin）；工程侧四角色 Admin/TeamOwner/Member/Viewer + 完整 Permission Matrix；**隔离单元是 biz_team，跨 biz_team 需 Admin 显式授权**；配额按 biz_team（并发 Run 10 / S3 500GB） | `docs/user-mgmt/spec.md:5-15`；`docs/model-experiment/architecture/系统架构说明.md:955-990,993-1004,1008-1013` | Reviewer 指派与评审状态、Workspaces、Assessment 的 source 审计 | **可复用的治理面**：任何评估资产/评审流程都应挂这里而非自建 |
 | M9 | **Console / Alert Group**：Name 唯一 + Type（SeaTalk）+ Webhook，Verify 为动效 mock | `apps/alert-group/app.js:4-11,163-166,184-196`；`docs/platform/module-inventory.md:51` | 预算 ALERT（每窗口一次 webhook） | 现成通知出口，粒度需加「质量告警」 |
 | M10 | **Feature Store / FG Serving 门禁范式**：Serving Config 发布前必须 Test Run 通过，否则 **409** | `docs/feature-store/api/feature-group-api.yaml:159-176` | 回归测试 + 发布阻塞（二元门禁） | **仓库里唯一成形的「评估卡发布」模式**——形状与 MLflow 的 pytest 退出码门禁一致 |
 | M11 | **Feature Store / 在线特征供给**：在线仅提供特征最新值，明写用于「Serving 场景：Model Serving、**AI Workflow/Agent** 等」；下游 Serving 使用 FG 在线特征，**耗时与监控由下游负责** | `docs/feature-store/architecture/在线特征平台架构说明.md:65,637` | trace 中的 RETRIEVER / TOOL span 与特征取数节点可同构记录 | 文档事实：AI 在线应用取数的唯一合法路径是 FG 在线特征；监控责任落在下游 = **LLM Workflow 自己** |
 | M12 | **Model Deployment**：Test Run 是手工输入参数看 mock 输出；Monitor 是外链 Grafana mock（QPS / P99 / Error Rate / Pods + 分数分布），**无任何质量指标** | `docs/model-deployment/spec.md:31-34`；`docs/platform/module-inventory.md:30` | Usage / Quality / Tool Calls 三视图；token 与 cost 指标 | 监控只有性能维度，**质量维度完全空缺** |
 | M13 | **Feature Store / Transformation AI Review**：详情页有 "Transformation Agent Review" 区块与 "AI Review" 按钮（`window.alert("AI Review (mock)")`），被 Test 通过与否门控 | `apps/feature-store/src/app/pages/TransformationFormPage.tsx:526-544`；`docs/feature-store/design/transformation-ui-spec.md:30,34` | `@mlflow.test` 的「先通过测试再解锁下一步」交互形状 | 文档事实：门控形状已存在，但评的是算子能否跑通，不是模型/LLM 质量 |
-| M14 | **Model Experiment / S-10 AI Prompt 探索实验**：PRD 已论证（P1，即 Phase 2），含完整 AI/LLM Justification（能力占比、替代方案对比、4 类失败模式与降级、错误成本评估）；两个埋点已定义。**原型未实现**（我对 `apps/model-experiment/` 全量 grep `AI Prompt\|ExplorationSession\|ai_prompt` 命中 0，本轮复跑确认） | `docs/model-experiment/design/产品原型与PRD.md:83,223-262,498-508,627-628`；`docs/model-experiment/README.md:215` | `optimize_prompts` + scorer 度量 + initial/final eval score | **最接近的「待建」设计接缝（不是现成实现）**：PRD 的「AI 生成 → 人 Review → 批量提交 → 统一对比」是同类交互形态的参照，可作 R-09 prompt 治理的**交互参考**；但该功能在此仓库中只有 PRD 文字、**零代码与零数据模型**，不能当作可复用资产。R-09 的实质论据（版本不可变 + alias 可变指针）来自第 4 章，不依赖此参照 |
+| M14 | **Model Experiment / S-10 AI Prompt 探索实验**：PRD 已论证（P1，即 Phase 2），含完整 AI/LLM Justification（能力占比、替代方案对比、4 类失败模式与降级、错误成本评估）；两个埋点已定义。**原型未实现**（我对 `apps/model-experiment/` 全量 grep `AI Prompt\|ExplorationSession\|ai_prompt` 命中 0，本轮复跑确认） | `docs/model-experiment/design/产品原型与PRD.md:83,223-262,498-508,627-628`；`docs/model-experiment/README.md:217` | `optimize_prompts` + scorer 度量 + initial/final eval score | **最接近的「待建」设计接缝（不是现成实现）**：PRD 的「AI 生成 → 人 Review → 批量提交 → 统一对比」是同类交互形态的参照，可作 R-09 prompt 治理的**交互参考**；但该功能在此仓库中只有 PRD 文字、**零代码与零数据模型**，不能当作可复用资产。R-09 的实质论据（版本不可变 + alias 可变指针）来自第 4 章，不依赖此参照 |
 | M15 | **平台级开环**：模糊点 C-4「监控与再训练回流缺失…当前生命周期为开环」，已渲染进架构图册 PENDING 列表 | `docs/platform/architecture.md:74-98`；`apps/architecture/index.html:444-448` | 在线自动评估 + Issue Detection + 效果漂移监控 | **AI 应用上线后的效果监控会落进同一个空位** |
 | M16 | **跨团队共享缺审批**：现状只有 Admin 显式授权或硬隔离；改进材料把「跨 Team 的 Run 触发」标为「安全风险高，需额外的审批流；本期不开放」，全局共享策略（允许/禁止/需审批）仅为 proposed | `docs/model-experiment/architecture/系统架构说明.md:995`；`docs/model-experiment/evals/skill-eval-permission-redesign.md:29-31,55-91,181-183,245-248`（注：该文件是内部工作笔记式的评测材料，非产品规格） | Review Queues 的队列 + 指派 + 共享状态 | **合理推断**：AI 线上应用天然是消费方团队，会最先撞上 biz_team 一维隔离 |
 | M17 | **Background Task**：独立顶级模块 Placeholder（后台异步任务的调度、补偿、清理） | `assets/shell.js:120-130`；`docs/platform/module-inventory.md:52` | 异步 job（prompt 优化 job、issue detection 管道）、定期对账 | 现成空槽 |
@@ -572,7 +572,7 @@ Built-in judges → Guidelines judges → Custom judges（`make_judge`）→ Cod
 
 | 能力 | Aimos 现状 | 证据 |
 |---|---|---|
-| **LLM/GenAI 评估** | **完全没有**。无 judge / scorer / 评分器 / 评估数据集 / 回归测试 / 门禁的任何实体、API 或 UI。证据（本轮复跑，**命令需带排除目录才可复现**）：`grep -rniE "llm.?as.?judge\|scorer\|guardrail" docs/ --exclude-dir=research` → **0 行**；不带 `--exclude-dir=research` 会得到 **80 行，全部来自本文自身**（`grep -rniE ... docs/ \| wc -l` → 80；`grep -rniE ... docs/ -l` → 仅本文件）。全库同类证据的检索口径统一为**排除 `research/` 与 `node_modules/`** | 本轮命令：`grep -rniE "llm.?as.?judge\|scorer\|guardrail" docs/ --exclude-dir=research` → 0 行 |
+| **LLM/GenAI 评估** | **完全没有**。无 judge / scorer / 评分器 / 评估数据集 / 回归测试 / 门禁的任何实体、API 或 UI。证据（本轮复跑，**命令需带排除目录才可复现**）：带 `--exclude-dir=research` → **0 行**；不带会得到 **≈80 余行（实测 85 行；该计数由本文自身文本决定、随编辑漂移），全部来自本文自身**（`-l` 仅列出本文件）。本节命令与实测输出见表格下方代码块。全库同类证据的检索口径统一为**排除 `research/` 与 `node_modules/`** | 命令原文与实测输出见表格下方代码块（带 `--exclude-dir=research` → **0 行**） |
 | **Tracing / 可观测性底座** | 无 Trace / Span 数据模型、无 OpenTelemetry 设计、无 LLM 调用的请求级记录。MLflow Traces 页签仅为静态示意死链；平台现有可观测性只有特征侧延迟/错误率与部署侧 Grafana mock 的 QPS/P99/ErrorRate | `apps/mlflow/index.html:252`；`docs/model-deployment/spec.md:33`；`docs/feature-store/architecture/在线特征平台架构说明.md:741-753` |
 | **Prompt 资产** | 未在任何文档或数据模型中出现（LLM Mgmt 管的是模型接入）；内嵌 MLflow 顶栏 Prompts 入口是死链且被列为待裁剪 | `apps/mlflow/index.html:208`；`mlflow-integration.md:256`；`docs/llm-mgmt/spec.md` 全篇无 prompt |
 | **评估数据集 / 人工反馈 / 标注闭环** | 无 inputs/expectations 结构、无 trace→dataset 采样路径、无标注流程。最接近的 `log_input` 数据集血缘仍停留在「建议」状态 | `mlflow-integration.md:251` |
@@ -580,8 +580,16 @@ Built-in judges → Guidelines judges → Custom judges（`make_judge`）→ Cod
 | **密钥治理** | 明确未解决：API Key 加密存储与掩码回显策略、Check 的真实实现口径、Team Access 多团队共享均挂账 | `docs/llm-mgmt/spec.md:43-45`；`docs/platform/module-inventory.md:19` |
 | **Knowledge Base 与索引链路** | 整体空白；两个 Embedding 模型已登记却无消费方——向量库、切片、召回评估全部缺失 | `assets/shell.js:68-71`；`apps/llm-mgmt/app.js:35,38` |
 | **跨团队 AI 资产共享审批** | 只有 Admin 显式授权或硬隔离 | `系统架构说明.md:995`；`skill-eval-permission-redesign.md:181-183,245-248` |
-| **AI 能力的埋点契约** | PRD 已定义两个埋点但功能是 P1 且原型未实现，埋点未落地 | `产品原型与PRD.md:627-628`；`docs/model-experiment/README.md:215` |
+| **AI 能力的埋点契约** | PRD 已定义两个埋点但功能是 P1 且原型未实现，埋点未落地 | `产品原型与PRD.md:627-628`；`docs/model-experiment/README.md:217` |
 | **AI 资产版本单元** | MLflow Logged Models「暂不引入；模型资产单元仍是 Build」——**GenAI 侧没有版本化资产单元可挂** | `mlflow-integration.md:29` |
+
+> 上表第一行所用命令（置于表格外：表格单元格内的竖线必须转义为 `\|`，而 ERE 正则里的 `\|` 是字面竖线、会让检索结果失效）：
+
+```bash
+grep -rniE "llm.?as.?judge|scorer|guardrail" docs/ --exclude-dir=research | wc -l   # → 0
+grep -rniE "llm.?as.?judge|scorer|guardrail" docs/ | wc -l                          # → 85
+grep -rniE "llm.?as.?judge|scorer|guardrail" docs/ -l                               # → 仅 docs/platform/research/MLflow-GenAI-评估与AI平台调研.md
+```
 
 ### 5.3 可复用资产（按「拿来就能用」排序）
 
@@ -593,7 +601,7 @@ Built-in judges → Guidelines judges → Custom judges（`make_judge`）→ Cod
 4. **S3 路径规范 `s3://{bucket}/{base_prefix}/{exp_id}/{run_id}/` 下分 `mlflow/` 与 `nodes/{node_id}/` + `config_snapshot.json` + `manifest.json`**（`mlflow-integration.md:171-193`）：trace/eval artifact 可直接沿用同一前缀约定。
 5. **容错与降级四件套**（`mlflow-integration.md:236-243`）：Tracking Server 不可用 → 产物落 S3 事后补录；`log_artifact` 失败 → 重试 3 次指数退避 + 标 PARTIAL 不影响 Run 状态；`register_model` 失败 → 平台侧正常注册、字段留空异步补录；定期对账任务。
 6. **FG Serving 的「Test Run 通过才允许发布」门禁形状**（`feature-group-api.yaml:159-176`）：LLM Workflow 的发布门控可照此设计（含 409 语义）。**注意差异（本版标注）**：FG 的 Test Run 是**确定性**算子判定（同文件 `:179+` 的 test-run 端点），LLM 回归门禁是**非确定**判定——形状可复用，判定语义不可照搬，见 R-03。
-7. **既有指标口径表**（`mlflow-integration.md:195-207`）：仓库内唯一成体系的指标登记表，可作 GenAI 评估指标的并列表参考（但注意其指标全部是模型性能类：auc / ks / f1 / precision / recall 等）。
+7. **既有指标口径表**（`mlflow-integration.md:195-207`）：**Model Platform 侧唯一的模型指标口径表**，可作 GenAI 评估指标的并列表参考（但注意其指标全部是模型性能类：auc / ks / f1 / precision / recall 等）。特征侧另有 `docs/feature-store/architecture/在线特征平台架构说明.md:741-753` 的 8 项在线特征指标表（`fg_serving_latency_ms` / `fs_error_rate` 等；性质不同，不冲突）。
 8. **Biz Team + Team Access 的授权面**（`docs/llm-mgmt/spec.md:7-11`；`docs/user-mgmt/spec.md:5-15`）：LLM Mgmt 的 TEAMS 枚举与 Model Experiment 的 biz_team 同源，可直接承载评估资产的可见范围。
 
 ---
@@ -611,7 +619,7 @@ Built-in judges → Guidelines judges → Custom judges（`make_judge`）→ Cod
 | 维度 | ① 复用现有内部 MLflow（升到 ≥3.14） | ② 自托管一套独立 MLflow GenAI | ③ 自建轻量（trace 落 S3 + 平台侧 assessment 表，不引入 `mlflow.genai` API 面） | ④ 先不建（只做 R-12 token/cost 埋点） |
 |---|---|---|---|---|
 | **能力覆盖度** | 最高：开箱获得 evaluate / judges / datasets / automatic evaluation / Review Queues / Gateway | 同 ①，但需自建一套实例运维 | 中：trace 与 assessment 模型可自建，但 judge 生态、对齐优化器、UI 全部要自己写 | 最低：只有成本可见性，没有质量信号 |
-| **前置成本（含 MLflow 升级）** | **高**：需跨团队把内部 Managed Service 从 2.21.3 升到 ≥3.14（约 10 个 minor），排期不由本平台决定 | 中高：需自建实例（SQL 后端 + artifact store + 运维），但**不依赖内部团队排期** | 低-中：平台侧建表 + 埋点；无外部依赖 | 最低 |
+| **前置成本（含 MLflow 升级）** | **高**：需跨团队把内部 Managed Service 从 2.21.3 升到 ≥3.14（**16 个 minor**：2.21.3 → 3.14.0；至 3.16 为 18 个），排期不由本平台决定 | 中高：需自建实例（SQL 后端 + artifact store + 运维），但**不依赖内部团队排期** | 低-中：平台侧建表 + 埋点；无外部依赖 | 最低 |
 | **数据主权（能否不离平台）** | 低：trace/assessment 落内部 Managed Service，跨 region 数据的驻留需与其团队共同确认（见 R-23） | 中：实例归本平台，仍是一套新系统 | **高**：数据可只落平台自有的 S3 与库，region 边界完全自控 | 高（不落数据） |
 | **与既有 MLflow 集成设计的一致性** | 高：完全落在既有桥的口径内 | 中：与既有「MLflow 为内部 Managed Service、平台不新建」口径**冲突** | 中：存量 MLflow 只继续服务传统模型链路，GenAI 侧并列；与 R-05 的「并列」口径相容 | 高（不动存量） |
 | **主要风险** | 升级排期不可控；升完还要解 §8-7 SSO/RBAC | 与既有集成口径冲突，需重新拍板 | 要自己维护 judge 生态与 UI，长期成本可能反超 | 用户看不到质量，门禁无法建立 |
@@ -631,7 +639,7 @@ Built-in judges → Guidelines judges → Custom judges（`make_judge`）→ Cod
   1. `mlflow-integration.md:5`：内部改造并嵌入的开源 MLflow，**基线 2.21.3**；
   2. `apps/mlflow/index.html:203`：原型顶栏版本徽标 `2.21.3-int`；
   3. `architecture-diagrams.md:39`：「基线 2.21.3 / **MLflow 3.x UI**」——「3.x UI」与「2.21.3」并列，**该表述本身需要澄清**（是指前端 UI 抄了 3.x 布局，还是后端实为 3.x？）。
-  本报告论证的能力全部来自 master @ `3.16.2.dev0`，与 2.21.3 相差约 10 个 minor 版本。**受影响的建议与所需最低版本**：
+  本报告论证的能力全部来自 master @ `3.16.2.dev0`，与 2.21.3 相隔 **16 个 minor**（2.21.3 → 3.14.0；至 3.16 为 18 个）。**受影响的建议与所需最低版本**：
 
 | 建议 | 依赖的 MLflow 能力 | 最低版本 | 2.21.3 是否具备 |
 |---|---|---|---|
@@ -1102,12 +1110,12 @@ P-00（版本前置门：确认 2.21.3 → ≥3.14 的可行性与排期）
 | F-58 | Guardrail 两阶段、Post-LLM 不覆盖 streaming、编辑即注册新 scorer 版本并原子替换 | `guardrails.mdx:10,63,97,127` | 高 | — |
 | F-59 | Gateway 开销个位数到几十毫秒；benchmark 方法论与未覆盖项 | `benchmarks.mdx:7-9,38-63` | 高 | — |
 | F-60 | 双 trace 分实验存储 + link 避免 payload 重复 | `distributed-tracing.mdx:119` | 高 | — |
-| F-61 | LoggedModel + git 三态版本键 + 去重；`set_active_model` 后 trace 自动挂版本 | `version-tracking.md:41`；`track-application-versions.mdx:5-7,48,336` | 高 | — |
-| F-62 | `mlflow.openai.log_model()` 弃用，改 Prompt Registry | `flavors.md:5-16` | 高 | — |
-| F-63 | ResponsesAgent 取代 ChatModel/ChatAgent；`/invocations` + Responses API 契约 | `responses-agent-intro.md:12`；`serving/responses-agent.md:51,57,293-305` | 高 | — |
-| F-64 | OSS 不提供 serving endpoint 的创建与管理 | `serving/responses-agent.md:992` | 高 | — |
-| F-65 | MCP Registry（3.15.0 experimental）与 MLflow MCP Server（≥3.5.1）方向相反 | `mcp-registry.md:7`；`mcp.md:143-158` | 高 | — |
-| F-66 | 3.7.0 起自托管默认后端改为 SQLite | `self-hosting.md:9` | 高 | — |
+| F-61 | LoggedModel + git 三态版本键 + 去重；`set_active_model` 后 trace 自动挂版本 | `docs/docs/genai/version-tracking/track-application-versions-with-mlflow.mdx:71,86`；`docs/docs/genai/version-tracking/index.mdx:73,110` | 高 | — |
+| F-62 | `mlflow.openai.log_model()` 弃用，改 Prompt Registry | `docs/docs/genai/flavors/index.mdx:12-13` | 高 | — |
+| F-63 | ResponsesAgent 取代 ChatModel/ChatAgent；`/invocations` + Responses API 契约 | `docs/docs/genai/flavors/responses-agent-intro.mdx:13`；`docs/docs/genai/serving/responses-agent.mdx:15-18,293-297,566` | 高 | — |
+| F-64 | OSS 不提供 serving endpoint 的创建与管理 | `docs/docs/genai/serving/responses-agent.mdx:581` | 高 | — |
+| F-65 | MCP Registry（3.15.0 experimental）与 MLflow MCP Server（≥3.5.1）方向相反 | `docs/docs/genai/mcp-registry/index.mdx:16`；`docs/docs/genai/mcp/index.mdx:14,124-135` | 高 | — |
+| F-66 | 3.7.0 起自托管默认后端改为 SQLite | `docs/docs/self-hosting/index.mdx:15` | 高 | — |
 | F-67 | 版本与快照：master @ `0cfe7e1d`、version.py 3.16.2.dev0、tag v3.16.1 | `git rev-parse HEAD`；`mlflow/version.py`；`gh api` | 高 | 站点对应 release 未确认 |
 
 ### 8.2 校对修正吸收清单（21 条 correction 全部登记）
@@ -1190,11 +1198,24 @@ P-00（版本前置门：确认 2.21.3 → ≥3.14 的可行性与排期）
 | RV-11 | **成本治理缺执行点**（P1）：计量与语义都有，无人拦截 | **采纳**。**R-10 的预算语义迁出**，与 R-12 合并为新增 **R-24**（计量 + 上限 + 执行点三件），明确执行点为 Orches Service / LLM Workflow 网关层、并在 R-06 链路拦截；R-10 从「四件设计」改为「三件」 | 6:R-24、6:R-10 |
 | RV-12 | **R-03 拿 FG 409 门禁作同形论据，抹掉确定性差别**（P2） | **采纳**。保留「形状可复用」类比，明确标注差异（FG Test Run 是确定性判定，LLM 门禁非确定）；5.3 第 6 项补同样说明 | 6:R-03、5.3(第 6 项) |
 | RV-13 | **M14 措辞过度**（P2）：未实现的 P1 功能被称「最接近的现成设计接缝」 | **采纳**。改为「最接近的**待建**设计接缝（不是现成实现）」，并注明零代码零数据模型、R-09 不依赖此参照 | 5.1(M14) |
-| RV-14 | **grep 命令不可复现**（P2）：未写 `--exclude-dir=research`，照抄得 80 而非 0 | **采纳**。本文与 5.2 的命令补全排除参数；**如实记录两种情况**（不带排除 = 80 行且全部来自本文件；带排除 = 0 行），并声明全库同类证据统一排除 `research/` 与 `node_modules/` | 1、5.2 |
+| RV-14 | **grep 命令不可复现**（P2）：未写 `--exclude-dir=research`，照抄得 80 而非 0 | **采纳**。本文与 5.2 的命令补全排除参数；**如实记录两种情况**（不带排除 = ≈80 余行（实测 85 行）且全部来自本文件；带排除 = 0 行），并声明全库同类证据统一排除 `research/` 与 `node_modules/` | 1、5.2 |
 | RV-15 | **成本字段全是定性档位**（P2） | **采纳**。为全部 24 条建议补 **人天量级**（如 R-04 约 25-40 人天、R-20 60+ 人天）与**外部依赖团队**（MLflow / LLM / 安全合规 / 业务方）；汇总矩阵新增「人天量级」与「外部依赖」两列 | 6:全部建议 + 汇总矩阵 |
 | RV-16 | **编号与分段顺序冲突 + 摘要必答点索引不全**（P2） | **采纳（部分，取保守做法）**。**不重编既有编号**（避免打乱引用，符合本次修订「编号保持稳定」的要求），改为：P2 段开头加「编号连续性说明」、汇总矩阵**按优先级重排**、P1 段内把 R-12/R-06 排到前列；摘要的必答点索引补上 **R-11/R-12**（本条评审指出）；新增建议顺延为 R-21～R-24 | 1、6:P2 说明、汇总矩阵 |
 
 **一处刻意未采纳的方案**：RV-16 的建议之一是「把 R-15/R-16/R-17 重编为按优先级连续」。本版**未采纳重编**，理由是本次修订的硬约束「建议编号保持稳定（如 R1、R2…）」优先——重编会让所有既有引用（摘要、汇总矩阵、DAG、7.2 节）失效并需要全文回改，收益低于风险。改用「不重编 + 加说明 + 矩阵按优先级重排」的等价方案达成同一目标。
+
+### 8.2.2 终稿验收修订清单（第三轮，6 条）
+
+> 来源：独立终稿验收（verdict：pass-with-issues）列出的 6 类可修复问题，**全部处置**，逐条登记如下。**本轮不重排结构、不动任何既有编号（F-/C-/RV-/Q-/A-/R-）**；新增编号自 RV-17 起顺延。
+
+| # | 问题 | 处置 | 依据 |
+|---|---|---|---|
+| RV-17 | 引注 `docs/model-experiment/README.md:215` 落错行（该行是「自动 Feature Selection（Phase 2）」，共 2 处） | 两处均改为 `docs/model-experiment/README.md:217`（`ExplorationSession（AI Prompt 多配置对比）` 行；同表 `:203` 亦标 Phase 2） | `sed -n '203p;215p;217p' docs/model-experiment/README.md`（改前逐行确认） |
+| RV-18 | §8.1 中 F-61～F-66（6 行）引注不可核：用文档站 slug 而非仓库路径，且行号越界（289 行的文件写 `:336`、718 行的文件写 `:992`） | 6 行全部改为仓库真实路径 `docs/docs/genai/**` + 真实行号；其中候选行的 F-63 `:51,57` 核不上论断，改用服务化端点与契约类型行；F-61 补去重行 `:86` | `raw.githubusercontent.com/mlflow/mlflow/0cfe7e1d…` 逐文件拉取（8 个文件均 HTTP 200）后 `awk`/`sed` 逐行核对 |
+| RV-19 | §5.2 grep 命令退化：ERE 下 `\|` 是字面竖线，使 0 行结果无效 | 正则改用普通 `|`；命令移入 §5.2 表格下方代码块（表格单元内的竖线必须转义为 `\|`，否则表格断裂——这正是原写法退化的成因） | 实跑：带 `--exclude-dir=research` → **0 行**；不带 → **85 行**；`-l` 仅列出本文件 |
+| RV-20 | 自指计数「80 行」低估，且随本文自身编辑漂移 | 改为「**≈80 余行（实测 85 行；该计数由本文自身文本决定、随编辑漂移）**」；§5.2 与 RV-14 两处同步 | 同上，`grep … \| wc -l` 在本轮编辑后复测 |
+| RV-21 | 「约 10 个 minor」低估（§5.1 M7、§6.0 对比表、§6.0.1 三处） | 三处均改为「**16 个 minor**（2.21.3 → 3.14.0；至 3.16 为 18 个）」；**结论方向不变**（仍是跨团队升级议题而非配置项） | minor 序列 2.20 / 2.21 / 2.22 / 3.0–3.16 计数：2.22 → 3.14 = 16，2.22 → 3.16 = 18 |
+| RV-22 | §5.3 第 7 项「仓库内唯一成体系的指标登记表」表述过强 | 改为「**Model Platform 侧唯一的模型指标口径表**」，并注明特征侧另有 8 项在线特征指标表（性质不同，不冲突） | `docs/feature-store/architecture/在线特征平台架构说明.md:741-753`（§13.2 关键业务指标，8 行） |
 
 ### 8.3 覆盖度审计处置清单
 
