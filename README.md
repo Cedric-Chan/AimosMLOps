@@ -112,7 +112,6 @@ Aimos MLOps/
 
 - 源码（main）与部署产物（gh-pages）**都推 GitHub**（`origin`），GitHub 的 `pages-build-deployment` 在 gh-pages 更新后自动重建站点
 - 线上站点：<https://cedric-chan.github.io/AimosMLOps/>
-- GitLab 侧（`git.garena.com/cedric.chencan/AimosMLOps`）已冻结为只读归档，源与内容留在 GitHub
 - 本地预览：`./scripts/assemble.sh` 后对 `local-dist/` 起任意静态服务器
 
 ## 历史仓库（已冻结，不再维护）
