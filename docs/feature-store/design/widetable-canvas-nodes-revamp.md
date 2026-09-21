@@ -3,7 +3,7 @@
 > **状态**：产品规格（阶段 B）。实现见 React 原型 [`prototypes/feature-widetable/`](../../prototypes/feature-widetable/)。  
 > **曾用名**：Data Sink → **Data Ingestion**；END → **Data Cleaning**。
 
-**关联**：[产品原型图 §3.5.2](front-design/产品原型图.md)。
+**关联**：[产品原型图 §3.5.2](front-design/产品原型图.md)；画布交互（指针模式、节点密度、实例信息条）见 [`widetable-canvas-interaction-revamp.md`](widetable-canvas-interaction-revamp.md)。
 
 ### 从列表 Copy 新建画布
 

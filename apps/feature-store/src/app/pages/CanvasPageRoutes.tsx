@@ -1,7 +1,7 @@
 import { Navigate, useLocation, useNavigate, useParams } from "react-router";
 import { CanvasPage } from "@/app/components/CanvasPage";
 import type { WideTableFormValues } from "@/app/components/AddWideTableModal";
-import { getWideTableById } from "@/data/mockWideTables";
+import { getCanvasSnapshotByRow, getWideTableById } from "@/data/mockWideTables";
 import type { WideTableCanvasSnapshot } from "@/data/widetableCanvasModel";
 
 export function CanvasNewRoute() {
@@ -33,7 +33,12 @@ export function CanvasEditRoute() {
     return <Navigate to="/wt" replace />;
   }
   return (
-    <CanvasPage mode="edit" row={row} onBack={() => navigate("/wt")} />
+    <CanvasPage
+      mode="edit"
+      row={row}
+      canvasSnapshot={getCanvasSnapshotByRow(row)}
+      onBack={() => navigate("/wt")}
+    />
   );
 }
 
@@ -53,6 +58,7 @@ export function CanvasInstanceRoute() {
       mode="instance"
       row={row}
       initialInstanceId={decodedInstanceId}
+      canvasSnapshot={getCanvasSnapshotByRow(row)}
       onBack={() => navigate("/wt")}
     />
   );

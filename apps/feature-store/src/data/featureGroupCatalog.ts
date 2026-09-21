@@ -1,5 +1,3 @@
-import type { NodeId } from "@/data/widetableCanvasModel";
-
 export interface CatalogColumn {
   name: string;
   type: string;
@@ -87,10 +85,9 @@ export function getCleaningFeatureNameOptions(): string[] {
   return [...names].sort((a, b) => a.localeCompare(b));
 }
 
-export const DEFAULT_FG_BY_NODE: Partial<Record<NodeId, string>> = {
-  C: "user_profile_features",
-  D: "order_history_features",
-  E: "credit_behavior_features",
-};
-
 export const JOIN_TYPES = ["Left Latest Join", "Inner Latest Join"];
+
+/** Columns a Feature Group contributes to the wide table — its catalog columns. */
+export function fgColumnCount(name: string): number {
+  return FG_CATALOG.find((f) => f.name === name)?.cols.length ?? 0;
+}

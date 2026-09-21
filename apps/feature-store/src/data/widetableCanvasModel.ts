@@ -1,6 +1,19 @@
 /** Serializable DAG + panel state for WideTable canvas (mock / copy snapshot). */
 
-export type NodeId = "B" | "C" | "D" | "E" | "F";
+import { fgColumnCount } from "@/data/featureGroupCatalog";
+
+/**
+ * Node ids are opaque strings: a WideTable fans in an unbounded number of Feature
+ * Groups (a production WideTable runs 19), so the
+ * canvas must not cap the graph at a fixed roster of ids.
+ */
+export type NodeId = string;
+
+/** One `label: value` row rendered inside a node card (e.g. `Join` / `Columns`). */
+export interface NodeParam {
+  label: string;
+  value: string;
+}
 
 export interface NodeDef {
   id: NodeId;
@@ -11,28 +24,40 @@ export interface NodeDef {
   h: number;
   title: string;
   subtitle: string;
+  /** Facts the node carries on the canvas — production shows Join/Columns rows. */
+  params?: NodeParam[];
 }
 
-export const CANVAS_W = 1060;
-export const CANVAS_H = 520;
+export type CanvasEdge = [NodeId, NodeId];
 
-/** Default DAG — Feature Groups → Data Ingestion */
-export const INITIAL_NODES: NodeDef[] = [
-  { id: "B", type: "source", x: 96, y: 224, w: 144, h: 72, title: "Frame Table", subtitle: "Source Table" },
-  { id: "C", type: "feature", x: 300, y: 108, w: 185, h: 72, title: "user_profile_features", subtitle: "Feature Group" },
-  { id: "D", type: "feature", x: 300, y: 224, w: 185, h: 72, title: "order_history_features", subtitle: "Feature Group" },
-  { id: "E", type: "feature", x: 300, y: 340, w: 185, h: 72, title: "credit_behavior_features", subtitle: "Feature Group" },
-  { id: "F", type: "sink", x: 640, y: 224, w: 220, h: 72, title: "Data Ingestion", subtitle: "Wide table ingestion" },
-];
+/** Node card width, matching the production canvas (`w-[240px]`). */
+export const NODE_W = 240;
 
-export const EDGES: [NodeId, NodeId][] = [
-  ["B", "C"],
-  ["B", "D"],
-  ["B", "E"],
-  ["C", "F"],
-  ["D", "F"],
-  ["E", "F"],
-];
+/** Card height grows one row per param beyond the header's two-row budget. */
+export function nodeHeight(params: NodeParam[] = []): number {
+  return 112 + Math.max(0, params.length - 2) * 24;
+}
+
+export interface CanvasBounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  w: number;
+  h: number;
+}
+
+/** Canvas extents derived from node positions, so any node count lays out correctly. */
+export function canvasBounds(nodes: NodeDef[]): CanvasBounds {
+  if (nodes.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0, w: 0, h: 0 };
+  const xs = nodes.flatMap((n) => [n.x, n.x + n.w]);
+  const ys = nodes.flatMap((n) => [n.y, n.y + n.h]);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const maxX = Math.max(...xs);
+  const maxY = Math.max(...ys);
+  return { minX, minY, maxX, maxY, w: maxX - minX, h: maxY - minY };
+}
 
 export interface FrameTableSnapshot {
   sourceType: "hive" | "sql";
@@ -72,18 +97,163 @@ export interface DataIngestionConfigSnapshot {
 
 export interface WideTableCanvasSnapshot {
   nodes: NodeDef[];
+  edges: CanvasEdge[];
   frameTable: FrameTableSnapshot;
   dataCleaning: DataCleaningSnapshot;
-  featureGroups: Partial<Record<"C" | "D" | "E", FeatureGroupNodeSnapshot>>;
+  /** Keyed by Feature Group name, which is also the node title. */
+  featureGroups: Record<string, FeatureGroupNodeSnapshot>;
   /** Optional; defaults to generic mock paths in panels */
   dataIngestion?: DataIngestionConfigSnapshot;
 }
 
 const JOIN_DEFAULT = "Left Latest Join";
 
-export function createDefaultCanvasSnapshot(): WideTableCanvasSnapshot {
+/** Node builders — keep geometry and the facts shown on the card in one place. */
+export function sourceNode(id: NodeId, x: number, y: number, params: NodeParam[]): NodeDef {
   return {
-    nodes: INITIAL_NODES.map((n) => ({ ...n })),
+    id, type: "source", x, y, w: NODE_W, h: nodeHeight(params),
+    title: "Frame Table", subtitle: "Source Table", params,
+  };
+}
+
+export function featureGroupNode(
+  id: NodeId, x: number, y: number, title: string, join: string, columns: number
+): NodeDef {
+  const params: NodeParam[] = [
+    { label: "Join", value: join },
+    { label: "Columns", value: String(columns) },
+  ];
+  return {
+    id, type: "feature", x, y, w: NODE_W, h: nodeHeight(params),
+    title, subtitle: "Feature Group", params,
+  };
+}
+
+/** Feature Groups are vertically centred on the source/sink rows and fan out to the right. */
+export const FG_GRID_X0 = 372;
+export const FG_GRID_Y0 = 72;
+export const FG_GRID_DX = NODE_W + 60;
+export const FG_GRID_DY = 144;
+/** Horizontal breathing room between the Feature Group block and the run's bookend nodes. */
+export const SINK_GAP_X = 200;
+
+export const SOURCE_X = 72;
+
+/** One column of Feature Groups reads best up to four; beyond that wrap into a grid. */
+export function fgGridCols(count: number): number {
+  return count <= 4 ? 1 : Math.ceil(Math.sqrt(count));
+}
+
+/** Where the `index`-th Feature Group sits in a `cols`-wide grid. */
+export function fgGridPosition(index: number, cols: number): { x: number; y: number } {
+  return {
+    x: FG_GRID_X0 + (index % cols) * FG_GRID_DX,
+    y: FG_GRID_Y0 + Math.floor(index / cols) * FG_GRID_DY,
+  };
+}
+
+export function sinkNode(id: NodeId, x: number, y: number, params: NodeParam[]): NodeDef {
+  return {
+    id, type: "sink", x, y, w: NODE_W, h: nodeHeight(params),
+    title: "Data Ingestion", subtitle: "Output paths", params,
+  };
+}
+
+export interface FeatureGroupSpec {
+  name: string;
+  columns: number;
+  join?: string;
+}
+
+/** The Feature Groups wired on the demo canvases; column counts come from the catalog. */
+const DEMO_FGS: FeatureGroupSpec[] = [
+  "user_profile_features",
+  "order_history_features",
+  "credit_behavior_features",
+].map((name) => ({ name, columns: fgColumnCount(name) }));
+
+interface SnapshotSpec {
+  frameTable: FrameTableSnapshot;
+  dataCleaning: DataCleaningSnapshot;
+  dataIngestion?: DataIngestionConfigSnapshot;
+  fgs?: FeatureGroupSpec[];
+}
+
+/**
+ * Assemble a canvas from its config: node positions, node params and the edge list are all
+ * derived, so adding a Feature Group never means hand-maintaining coordinates or DAG edges.
+ */
+export function buildSnapshot(spec: SnapshotSpec): WideTableCanvasSnapshot {
+  const fgs = spec.fgs ?? [];
+  const cols = fgGridCols(fgs.length);
+
+  const fgNodes = fgs.map((fg, i) =>
+    featureGroupNode(
+      `fg:${fg.name}`,
+      fgGridPosition(i, cols).x,
+      fgGridPosition(i, cols).y,
+      fg.name,
+      fg.join ?? JOIN_DEFAULT,
+      fg.columns
+    )
+  );
+
+  const ft = spec.frameTable;
+  const sourceParams: NodeParam[] =
+    ft.sourceType === "hive"
+      ? [
+          { label: "sourceType", value: "Hive" },
+          { label: "tableSchema", value: ft.tableSchema || "—" },
+          { label: "tableName", value: ft.tableName || "—" },
+        ]
+      : [
+          { label: "sourceType", value: "SQL" },
+          { label: "dataServer", value: ft.dataServer || "—" },
+        ];
+
+  const ing = spec.dataIngestion;
+  const sinkParams: NodeParam[] = [
+    { label: "rawTable", value: ing?.rawTable ?? "—" },
+    { label: "report", value: ing?.rawS3 ?? "—" },
+  ];
+
+  const fgBlock = canvasBounds(fgNodes);
+  const centreY = (h: number) => fgBlock.minY + fgBlock.h / 2 - h / 2;
+  const source = sourceNode("src", SOURCE_X, centreY(nodeHeight(sourceParams)), sourceParams);
+  const sink = sinkNode(
+    "sink",
+    fgBlock.maxX + SINK_GAP_X,
+    centreY(nodeHeight(sinkParams)),
+    sinkParams
+  );
+
+  const fgIds = fgNodes.map((n) => n.id);
+  return {
+    nodes: [source, ...fgNodes, sink],
+    edges: [
+      ...fgIds.map((id): CanvasEdge => [source.id, id]),
+      ...fgIds.map((id): CanvasEdge => [id, sink.id]),
+    ],
+    frameTable: ft,
+    dataCleaning: spec.dataCleaning,
+    dataIngestion: ing,
+    featureGroups: Object.fromEntries(
+      fgs.map((fg) => [
+        fg.name,
+        {
+          selectedFg: fg.name,
+          joinType: fg.join ?? JOIN_DEFAULT,
+          entityJoinCol: "",
+          eventTimeJoinCol: "",
+        },
+      ])
+    ),
+  };
+}
+
+export function createDefaultCanvasSnapshot(): WideTableCanvasSnapshot {
+  return buildSnapshot({
+    fgs: DEMO_FGS,
     dataIngestion: {
       rawTable: "feature_store.dwd_wide_raw_feat_v1",
       datePart: "ds",
@@ -102,91 +272,61 @@ export function createDefaultCanvasSnapshot(): WideTableCanvasSnapshot {
       entityCols: [],
       eventTimeCol: "",
     },
-    dataCleaning: {
-      enabled: false,
-      fillnaRows: [],
-      vmRows: [],
-    },
-    featureGroups: {
-      C: {
-        selectedFg: "user_profile_features",
-        joinType: JOIN_DEFAULT,
-        entityJoinCol: "",
-        eventTimeJoinCol: "",
-      },
-      D: {
-        selectedFg: "order_history_features",
-        joinType: JOIN_DEFAULT,
-        entityJoinCol: "",
-        eventTimeJoinCol: "",
-      },
-      E: {
-        selectedFg: "credit_behavior_features",
-        joinType: JOIN_DEFAULT,
-        entityJoinCol: "",
-        eventTimeJoinCol: "",
-      },
-    },
-  };
+    dataCleaning: { enabled: false, fillnaRows: [], vmRows: [] },
+  });
 }
 
-function cloneNodes(nodes: NodeDef[]): NodeDef[] {
-  return nodes.map((n) => ({ ...n }));
-}
-
-/** Risk / TH — slightly offset FG node + hive frame ref */
+/** Risk / TH — hive frame ref plus one pre-filled join pair. */
 export function snapshotRiskWideTable(): WideTableCanvasSnapshot {
   const base = createDefaultCanvasSnapshot();
   return {
-    ...base,
-    nodes: cloneNodes([
-      { id: "B", type: "source", x: 88, y: 220, w: 144, h: 72, title: "Frame Table", subtitle: "Source Table" },
-      { id: "C", type: "feature", x: 292, y: 100, w: 185, h: 72, title: "user_profile_features", subtitle: "Feature Group" },
-      { id: "D", type: "feature", x: 292, y: 220, w: 185, h: 72, title: "order_history_features", subtitle: "Feature Group" },
-      { id: "E", type: "feature", x: 292, y: 336, w: 185, h: 72, title: "credit_behavior_features", subtitle: "Feature Group" },
-      { id: "F", type: "sink", x: 632, y: 220, w: 220, h: 72, title: "Data Ingestion", subtitle: "Wide table ingestion" },
-    ]),
-    frameTable: {
-      sourceType: "hive",
-      dataServer: "reg_sg",
-      tableSchema: "feature_store",
-      tableName: "frame_risk_events_th",
-      sql: "",
-      customFilter: "ds >= '2026-01-01'",
-      entityCols: ["user_id"],
-      eventTimeCol: "event_time",
-    },
-    dataCleaning: {
-      enabled: true,
-      fillnaRows: [{ id: "fn-mock-1", method: "median", features: "credit_score, overdue_cnt" }],
-      vmRows: [{ id: "vm-mock-1", feature: "risk_band", sql: "CASE WHEN credit_score >= 700 THEN 'low' ELSE 'high' END" }],
-    },
-    dataIngestion: {
-      rawTable: "feature_store.dwd_wide_raw_risk_th",
-      datePart: "ds",
-      rawS3: "s3://data-lake-prod/widetable/reports/risk_th/20260217/raw_stats.json",
-      cleanedTable: "feature_store.dwd_wide_clean_feat_v1",
-      cleanedReportPath:
-        "s3://data-lake-prod/widetable/reports/ts_demo/20240315/clean_stats.json",
-    },
+    ...buildSnapshot({
+      fgs: DEMO_FGS,
+      frameTable: {
+        sourceType: "hive",
+        dataServer: "reg_sg",
+        tableSchema: "feature_store",
+        tableName: "frame_risk_events_th",
+        sql: "",
+        customFilter: "ds >= '2026-01-01'",
+        entityCols: ["user_id"],
+        eventTimeCol: "event_time",
+      },
+      dataCleaning: {
+        enabled: true,
+        fillnaRows: [{ id: "fn-mock-1", method: "median", features: "credit_score, overdue_cnt" }],
+        vmRows: [
+          {
+            id: "vm-mock-1",
+            feature: "risk_band",
+            sql: "CASE WHEN credit_score >= 700 THEN 'low' ELSE 'high' END",
+          },
+        ],
+      },
+      dataIngestion: {
+        rawTable: "feature_store.dwd_wide_raw_risk_th",
+        datePart: "ds",
+        rawS3: "s3://data-lake-prod/widetable/reports/risk_th/20260217/raw_stats.json",
+        cleanedTable: "feature_store.dwd_wide_clean_feat_v1",
+        cleanedReportPath:
+          "s3://data-lake-prod/widetable/reports/ts_demo/20240315/clean_stats.json",
+      },
+    }),
     featureGroups: {
       ...base.featureGroups,
-      C: { ...base.featureGroups.C!, entityJoinCol: "user_id", eventTimeJoinCol: "profile_ts" },
+      user_profile_features: {
+        ...base.featureGroups.user_profile_features,
+        entityJoinCol: "user_id",
+        eventTimeJoinCol: "profile_ts",
+      },
     },
   };
 }
 
-/** MX ACard — different FG titles on nodes */
+/** MX ACard — different frame table; Feature Groups keep their catalog identities. */
 export function snapshotAcardMx(): WideTableCanvasSnapshot {
-  const base = createDefaultCanvasSnapshot();
-  const nodes = cloneNodes(base.nodes);
-  const c = nodes.find((n) => n.id === "C")!;
-  const d = nodes.find((n) => n.id === "D")!;
-  c.title = "mx_user_demographics";
-  d.title = "mx_repayment_behavior";
-  return {
-    ...base,
-    nodes,
+  return buildSnapshot({
+    fgs: DEMO_FGS,
     frameTable: {
       sourceType: "hive",
       dataServer: "reg_us",
@@ -198,19 +338,13 @@ export function snapshotAcardMx(): WideTableCanvasSnapshot {
       eventTimeCol: "event_time",
     },
     dataCleaning: { enabled: false, fillnaRows: [], vmRows: [] },
-  };
+  });
 }
 
-/** Recommend SG */
+/** Recommend SG — SQL frame source. */
 export function snapshotRecommendSg(): WideTableCanvasSnapshot {
-  const base = createDefaultCanvasSnapshot();
-  const nodes = cloneNodes(base.nodes);
-  nodes.find((n) => n.id === "C")!.title = "rec_user_embedding";
-  nodes.find((n) => n.id === "D")!.title = "item_affinity_features";
-  nodes.find((n) => n.id === "E")!.title = "context_session_features";
-  return {
-    ...base,
-    nodes,
+  return buildSnapshot({
+    fgs: DEMO_FGS,
     frameTable: {
       sourceType: "sql",
       dataServer: "reg_sg",
@@ -221,5 +355,6 @@ export function snapshotRecommendSg(): WideTableCanvasSnapshot {
       entityCols: [],
       eventTimeCol: "",
     },
-  };
+    dataCleaning: { enabled: false, fillnaRows: [], vmRows: [] },
+  });
 }

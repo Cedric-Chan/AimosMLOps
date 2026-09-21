@@ -3,18 +3,20 @@ import {
   ArrowLeft, Pencil, ChevronDown, History, Zap, Square,
   AlertCircle, X, Database, Layers, Minus, Plus,
   Maximize2, RotateCcw, GitBranch, Search, Eye,
-  Copy, Check, Settings, Info,
+  Copy, Check, Settings, Info, MousePointer2, Hand, LayoutGrid,
 } from "lucide-react";
 import { WideTableFormValues } from "./AddWideTableModal";
 import { WideTableRow, Instance, InstanceStatus } from "./WideTableList";
 import { WideTableMetaModal } from "./WideTableMetaModal";
 import { TriggerInstanceModal } from "./TriggerInstanceModal";
-import type { NodeDef, NodeId } from "@/data/widetableCanvasModel";
+import type { NodeDef, NodeId, NodeParam, CanvasEdge } from "@/data/widetableCanvasModel";
 import {
-  CANVAS_H,
-  CANVAS_W,
-  EDGES,
-  INITIAL_NODES,
+  canvasBounds,
+  createDefaultCanvasSnapshot,
+  fgGridCols,
+  fgGridPosition,
+  SINK_GAP_X,
+  SOURCE_X,
   type DataIngestionConfigSnapshot,
   type FeatureGroupNodeSnapshot,
   type FrameTableSnapshot,
@@ -24,7 +26,7 @@ import {
   getHiveProjectSchemaNames,
   getHiveProjectTablesForSchema,
 } from "@/data/hiveProjectTables";
-import { FG_CATALOG, DEFAULT_FG_BY_NODE, JOIN_TYPES } from "@/data/featureGroupCatalog";
+import { FG_CATALOG, JOIN_TYPES } from "@/data/featureGroupCatalog";
 
 const HIVE_ALLOWLIST_HINT =
   "Only Hive tables on the risk_realtime project allowlist are listed. Contact the platform team if you need access.";
@@ -52,14 +54,65 @@ const EDGE_COLORS: Record<NodeStatus, string> = {
   failed: "#ef4444",  waiting: "#9ca3af",
 };
 
-function getMockNodeStatuses(s: InstanceStatus): Record<NodeId, NodeStatus> {
+/**
+ * Per-node execution status. WideTables fan in an arbitrary number of Feature Groups, so
+ * status is derived from graph shape: the frame table is the entry, Feature Groups report
+ * as one fan-in stage, and the sink closes the run. A FAILED instance therefore parks the
+ * failure on the stage that stopped the run.
+ */
+function getMockNodeStatuses(
+  s: InstanceStatus,
+  nodes: NodeDef[]
+): Record<NodeId, NodeStatus> {
+  const out: Record<NodeId, NodeStatus> = {};
+  const paint = (type: NodeDef["type"], status: NodeStatus) =>
+    nodes.filter((n) => n.type === type).forEach((n) => (out[n.id] = status));
+
   switch (s) {
-    case "SUCCESS": return { B: "success",      C: "success",      D: "success",      E: "success", F: "success" };
-    case "FAILED":  return { B: "success",      C: "success",      D: "failed",       E: "waiting", F: "waiting" };
-    case "RUNNING": return { B: "success",      C: "cache_skipped",D: "running",      E: "waiting", F: "waiting" };
-    case "QUEUING": return { B: "waiting",      C: "waiting",      D: "waiting",      E: "waiting", F: "waiting" };
-    case "KILLED":  return { B: "cache_skipped",C: "failed",       D: "waiting",      E: "waiting", F: "waiting" };
+    case "SUCCESS":
+      paint("source", "success");
+      paint("feature", "success");
+      paint("sink", "success");
+      break;
+    case "RUNNING":
+      paint("source", "success");
+      // Fan-in stage mid-flight: first Feature Group cached, the rest still running.
+      nodes
+        .filter((n) => n.type === "feature")
+        .forEach((n, i) => (out[n.id] = i === 0 ? "cache_skipped" : "running"));
+      paint("sink", "waiting");
+      break;
+    case "KILLED":
+      paint("source", "cache_skipped");
+      nodes
+        .filter((n) => n.type === "feature")
+        .forEach((n, i) => (out[n.id] = i === 0 ? "failed" : "waiting"));
+      paint("sink", "waiting");
+      break;
+    case "QUEUING":
+      paint("source", "waiting");
+      paint("feature", "waiting");
+      paint("sink", "waiting");
+      break;
+    case "FAILED":
+      // The failing stage is the sink: its upstream Feature Groups all had to succeed first.
+      paint("source", "success");
+      paint("feature", "success");
+      paint("sink", "failed");
+      break;
   }
+  return out;
+}
+
+/** Rolled-up progress for the instance strip. */
+function getRunProgress(nodeStatuses: Record<NodeId, NodeStatus>) {
+  const all = Object.values(nodeStatuses);
+  const done = all.filter((s) => s === "success" || s === "cache_skipped").length;
+  return {
+    done,
+    total: all.length,
+    failed: all.filter((s) => s === "failed").length,
+  };
 }
 
 // ─── InstanceStatusBadge ──────────────────────────────────────────────────────
@@ -80,13 +133,32 @@ function InstanceStatusBadge({ status, small }: { status: InstanceStatus; small?
   );
 }
 
+// ─── Connection ports ─────────────────────────────────────────────────────────
+/**
+ * Invisible-at-rest connection ports, revealed on node hover — the production canvas
+ * style. Purely an affordance here: connections are derived from the DAG, not hand-drawn.
+ */
+function NodePort({ side, terminal }: { side: "in" | "out"; terminal?: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`absolute top-1/2 -translate-y-1/2 w-2 h-4 rounded-full bg-blue-500/70 opacity-0
+        group-hover/node:opacity-100 transition-opacity
+        ${side === "in" ? "-left-1.5" : "-right-1.5"}
+        ${terminal ? "hidden" : ""}`}
+    />
+  );
+}
+
 // ─── Draggable pipeline node card ─────────────────────────────────────────────
 export function PipelineNodeCard({
-  node, selected, instanceView, nodeStatus,
+  node, selected, instanceView, nodeStatus, ports = true,
   onDragStart, onClick,
 }: {
   node: NodeDef; selected: boolean; instanceView: boolean;
   nodeStatus?: NodeStatus;
+  /** Instance View hides ports: the DAG is frozen and read-only. */
+  ports?: boolean;
   onDragStart: (e: React.MouseEvent) => void;
   onClick: () => void;
 }) {
@@ -96,13 +168,13 @@ export function PipelineNodeCard({
   const iconBg  = instanceView && ss ? ss.iconBg  : ts.iconBg;
   const iconCol = instanceView && ss ? ss.iconColor : ts.iconColor;
   const Icon =
-    node.id === "B" ? Database
+    node.type === "source" ? Database
     : node.type === "feature" ? Layers
     : Database;
 
   return (
     <div
-      className={`absolute bg-white rounded-xl border border-gray-200 border-l-4
+      className={`group/node absolute bg-white rounded-xl border border-gray-200 border-l-4
         ${accent}
         ${selected ? "ring-2 ring-teal-400 ring-offset-2 shadow-xl z-10" : "shadow-sm hover:shadow-md z-0"}
         ${instanceView ? "" : "cursor-grab active:cursor-grabbing"}`}
@@ -110,29 +182,49 @@ export function PipelineNodeCard({
       onMouseDown={onDragStart}
       onClick={onClick}
     >
-      <div className="flex items-center h-full px-3 gap-2.5">
+      {ports && <NodePort side="in" terminal={node.type === "source"} />}
+      {ports && <NodePort side="out" terminal={node.type === "sink"} />}
+
+      <div className="flex items-start px-3 pt-2.5 gap-2.5">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
           <Icon size={14} className={iconCol} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-xs text-gray-800 truncate leading-snug">{node.title}</div>
+          <div className="text-xs text-gray-800 truncate leading-snug uppercase" title={node.title}>
+            {node.title}
+          </div>
           <div className="text-xs text-gray-400 mt-0.5 truncate">{node.subtitle}</div>
-          {instanceView && ss && (
-            <span className={`inline-flex items-center gap-1 mt-1 text-xs px-1.5 py-px rounded ${ss.badge} ${ss.badgeText}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${ss.dot}`} />{ss.label}
-            </span>
-          )}
         </div>
+        {instanceView && ss && (
+          <span className={`inline-flex items-center gap-1 shrink-0 mt-0.5 text-xs px-1.5 py-px rounded ${ss.badge} ${ss.badgeText}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${ss.dot}`} />{ss.label}
+          </span>
+        )}
       </div>
+
+      {node.params && node.params.length > 0 && (
+        <div className="px-3 pb-2 pt-1.5 space-y-0.5">
+          {node.params.map((p) => (
+            <div
+              key={p.label}
+              className="flex items-center gap-1 rounded-md bg-slate-50 px-1.5 py-0.5 text-xs"
+              title={`${p.label}: ${p.value}`}
+            >
+              <span className="text-gray-400 shrink-0">{p.label}:</span>
+              <span className="text-gray-600 truncate">{p.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── SVG Edges ────────────────────────────────────────────────────────────────
 export function CanvasEdges({
-  nodes, instanceView, nodeStatuses,
+  nodes, edges, instanceView, nodeStatuses,
 }: {
-  nodes: NodeDef[]; instanceView: boolean; nodeStatuses?: Record<NodeId, NodeStatus>;
+  nodes: NodeDef[]; edges: CanvasEdge[]; instanceView: boolean; nodeStatuses?: Record<NodeId, NodeStatus>;
 }) {
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
   const edgeColor = (fromId: NodeId) => {
@@ -142,9 +234,16 @@ export function CanvasEdges({
   const markerKey = (col: string) =>
     col === "#22c55e" ? "green" : col === "#3b82f6" ? "blue" : col === "#f59e0b" ? "amber" : col === "#ef4444" ? "red" : "gray";
 
+  const bounds = canvasBounds(nodes);
+  // Anchor edges on the 8px grid so they never drift when node heights change.
+  const x1 = bounds.minX;
+  const y1 = bounds.minY;
+
   return (
-    <svg width={CANVAS_W} height={CANVAS_H}
-      style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "visible" }}>
+    <svg
+      style={{ position: "absolute", left: x1, top: y1, pointerEvents: "none", overflow: "visible" }}
+      width={bounds.w} height={bounds.h}
+    >
       <defs>
         {(["gray","green","blue","amber","red"] as const).map(k => {
           const c = { gray:"#9ca3af", green:"#22c55e", blue:"#3b82f6", amber:"#f59e0b", red:"#ef4444" }[k];
@@ -155,16 +254,16 @@ export function CanvasEdges({
           );
         })}
       </defs>
-      {EDGES.map(([fId, tId]) => {
+      {edges.map(([fId, tId]) => {
         const f = nodeMap[fId]; const t = nodeMap[tId];
         if (!f || !t) return null;
-        const x1 = f.x + f.w, y1 = f.y + f.h / 2;
-        const x2 = t.x,        y2 = t.y + t.h / 2;
-        const mx = (x1 + x2) / 2;
+        const ax = f.x + f.w - x1, ay = f.y + f.h / 2 - y1;
+        const bx = t.x - x1,        by = t.y + t.h / 2 - y1;
+        const mx = (ax + bx) / 2;
         const col = edgeColor(fId);
         return (
           <path key={`${fId}-${tId}`}
-            d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
+            d={`M${ax},${ay} C${mx},${ay} ${mx},${by} ${bx},${by}`}
             fill="none" stroke={col} strokeWidth="1.5"
             markerEnd={`url(#arr-${markerKey(col)})`}
           />
@@ -176,28 +275,52 @@ export function CanvasEdges({
 
 // ─── Minimap ──────────────────────────────────────────────────────────────────
 const MM_W = 118; const MM_H = 72;
-const mmSX = MM_W / CANVAS_W; const mmSY = MM_H / CANVAS_H;
 
-export function Minimap({ nodes, pan, zoom, cw, ch }: { nodes: NodeDef[]; pan: { x: number; y: number }; zoom: number; cw: number; ch: number }) {
-  const vpX = -pan.x / zoom; const vpY = -pan.y / zoom;
-  const vpW = cw / zoom;     const vpH = ch / zoom;
-  const rx = vpX * mmSX;     const ry = vpY * mmSY;
-  const rw = Math.max(8, vpW * mmSX); const rh = Math.max(8, vpH * mmSY);
+export function Minimap({
+  nodes, edges, pan, zoom, cw, ch,
+}: {
+  nodes: NodeDef[]; edges: CanvasEdge[];
+  pan: { x: number; y: number }; zoom: number; cw: number; ch: number;
+}) {
+  const b = canvasBounds(nodes);
+  const pad = 40;
+  const worldW = Math.max(1, b.w + pad * 2);
+  const worldH = Math.max(1, b.h + pad * 2);
+  // Keep the overview square-scaled, the way React Flow's minimap does.
+  const s = Math.min(MM_W / worldW, MM_H / worldH);
+  const offX = (MM_W - worldW * s) / 2 - (b.minX - pad) * s;
+  const offY = (MM_H - worldH * s) / 2 - (b.minY - pad) * s;
+
+  const vpX = (-pan.x) / zoom; const vpY = (-pan.y) / zoom;
+  const vpW = cw / zoom;       const vpH = ch / zoom;
   const tc: Record<NodeDef["type"], string> = { source: "#2dd4bf", feature: "#60a5fa", sink: "#fbbf24", end: "#9ca3af" };
+
+  const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm" style={{ padding: 8 }}>
       <div className="text-xs text-gray-400 mb-1.5 tracking-wide" style={{ fontSize: 10 }}>OVERVIEW</div>
       <svg width={MM_W} height={MM_H} style={{ display: "block" }}>
         <rect width={MM_W} height={MM_H} fill="#f8fafc" rx="4" />
-        {EDGES.map(([fId, tId]) => {
-          const f = nodes.find(n => n.id === fId); const t = nodes.find(n => n.id === tId);
+        {edges.map(([fId, tId]) => {
+          const f = nodeMap[fId]; const t = nodeMap[tId];
           if (!f || !t) return null;
-          const x1 = (f.x + f.w) * mmSX, y1 = (f.y + f.h / 2) * mmSY;
-          const x2 = t.x * mmSX, y2 = (t.y + t.h / 2) * mmSY;
-          return <path key={`${fId}-${tId}`} d={`M${x1},${y1} C${(x1+x2)/2},${y1} ${(x1+x2)/2},${y2} ${x2},${y2}`} fill="none" stroke="#d1d5db" strokeWidth="0.8" />;
+          const ax = (f.x + f.w) * s + offX, ay = (f.y + f.h / 2) * s + offY;
+          const bx = t.x * s + offX,          by = (t.y + t.h / 2) * s + offY;
+          return (
+            <path key={`${fId}-${tId}`}
+              d={`M${ax},${ay} C${(ax+bx)/2},${ay} ${(ax+bx)/2},${by} ${bx},${by}`}
+              fill="none" stroke="#d1d5db" strokeWidth="0.8" />
+          );
         })}
-        {nodes.map(n => <rect key={n.id} x={n.x * mmSX} y={n.y * mmSY} width={n.w * mmSX} height={n.h * mmSY} rx="2" fill={tc[n.type]} opacity="0.7" />)}
-        <rect x={rx} y={ry} width={rw} height={rh} fill="rgba(99,102,241,0.08)" stroke="#6366f1" strokeWidth="1" rx="2" />
+        {nodes.map(n => (
+          <rect key={n.id} x={n.x * s + offX} y={n.y * s + offY}
+            width={Math.max(2, n.w * s)} height={Math.max(2, n.h * s)} rx="2"
+            fill={tc[n.type]} opacity="0.7" />
+        ))}
+        <rect x={vpX * s + offX} y={vpY * s + offY}
+          width={Math.max(8, vpW * s)} height={Math.max(8, vpH * s)}
+          fill="rgba(99,102,241,0.08)" stroke="#6366f1" strokeWidth="1" rx="2" />
       </svg>
     </div>
   );
@@ -207,11 +330,105 @@ export function Minimap({ nodes, pan, zoom, cw, ch }: { nodes: NodeDef[]; pan: {
 export function ZoomControls({ zoom, onZoom, onFit }: { zoom: number; onZoom: (d: number) => void; onFit: () => void }) {
   return (
     <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg shadow-sm px-1.5 py-1">
-      <button onClick={() => onZoom(-0.1)} className="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded transition-all"><Minus size={12} /></button>
+      <button onClick={() => onZoom(-0.1)} title="Zoom out" className="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded transition-all"><Minus size={12} /></button>
       <span className="text-xs text-gray-600 w-9 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
-      <button onClick={() => onZoom(+0.1)} className="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded transition-all"><Plus size={12} /></button>
+      <button onClick={() => onZoom(+0.1)} title="Zoom in" className="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded transition-all"><Plus size={12} /></button>
       <div className="w-px h-3.5 bg-gray-200 mx-0.5" />
       <button onClick={onFit} title="Fit to screen" className="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded transition-all"><Maximize2 size={12} /></button>
+    </div>
+  );
+}
+
+// ─── Canvas tool modes ────────────────────────────────────────────────────────
+export type CanvasTool = "select" | "pan";
+
+/**
+ * Pointer-mode toggle plus Auto Layout. Drag-to-move nodes is only honest in Select mode,
+ * which is why the mode is an explicit control rather than a hidden modifier.
+ */
+export function CanvasToolbar({
+  tool, onTool, onAutoLayout, editable,
+}: {
+  tool: CanvasTool;
+  onTool: (t: CanvasTool) => void;
+  onAutoLayout: () => void;
+  /** Instance View is read-only: repositioning the graph is not offered. */
+  editable: boolean;
+}) {
+  const btn =
+    "p-1.5 rounded-md transition-all flex items-center justify-center";
+  const idle = "text-gray-500 hover:text-gray-800 hover:bg-gray-100";
+  const active = "bg-teal-50 text-teal-600";
+
+  return (
+    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg shadow-sm px-1.5 py-1">
+      <button
+        onClick={() => onTool("select")}
+        title="Select — drag nodes to reposition"
+        aria-pressed={tool === "select"}
+        className={`${btn} ${tool === "select" ? active : idle}`}
+      >
+        <MousePointer2 size={13} />
+      </button>
+      <button
+        onClick={() => onTool("pan")}
+        title="Pan — drag the canvas"
+        aria-pressed={tool === "pan"}
+        className={`${btn} ${tool === "pan" ? active : idle}`}
+      >
+        <Hand size={13} />
+      </button>
+      {editable && (
+        <>
+          <div className="w-px h-3.5 bg-gray-200 mx-0.5" />
+          <button onClick={onAutoLayout} title="Auto layout — tidy the graph" className={`${btn} ${idle}`}>
+            <LayoutGrid size={13} />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Drawer tabs (Config | Last Instance) ─────────────────────────────────────
+/**
+ * Node drawers split config from the most recent run, per the WideTable canvas spec.
+ * Last Instance is empty on a never-run table (Current Config), which is the honest answer
+ * rather than inventing a run.
+ */
+function DrawerTabs({
+  tab, onTab, showLastInstance,
+}: {
+  tab: "config" | "last-instance";
+  onTab: (t: "config" | "last-instance") => void;
+  showLastInstance: boolean;
+}) {
+  if (!showLastInstance) return null;
+  const item = (t: typeof tab, label: string) => (
+    <button
+      type="button"
+      onClick={() => onTab(t)}
+      className={`flex-1 py-1.5 text-xs rounded-lg transition-all ${
+        tab === t ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-0.5">
+      {item("config", "Config")}
+      {item("last-instance", "Last Instance")}
+    </div>
+  );
+}
+
+/** Read-only `label / value` block used by the Last Instance tab. */
+function StatRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-1.5 border-b border-gray-50 last:border-0">
+      <span className="text-xs text-gray-500 shrink-0">{label}</span>
+      <span className="text-xs text-gray-700 font-mono text-right break-all">{value}</span>
     </div>
   );
 }
@@ -265,10 +482,15 @@ function DataIngestionMergedPanel({
   onClose,
   ingestionConfig,
   dataCleaningEnabled,
+  instance,
+  nodeStatus,
 }: {
   onClose: () => void;
   ingestionConfig?: DataIngestionConfigSnapshot;
   dataCleaningEnabled: boolean;
+  /** Present only in Instance View; drives the Last Instance tab. */
+  instance?: Instance | null;
+  nodeStatus?: NodeStatus;
 }) {
   const rawTable = ingestionConfig?.rawTable ?? "feature_store.dwd_wide_raw_feat_v1";
   const rawS3 =
@@ -278,6 +500,10 @@ function DataIngestionMergedPanel({
   const cleanedReportPath =
     ingestionConfig?.cleanedReportPath ??
     "s3://data-lake-prod/widetable/reports/ts_demo/20240315/clean_stats.json";
+
+  const [tab, setTab] = useState<"config" | "last-instance">("config");
+  // Spec: Last Instance is empty under Current Config — there is no run to report.
+  const showLastInstance = Boolean(instance);
 
   return (
     <div className="w-80 shrink-0 bg-white border-l border-gray-100 flex flex-col h-full overflow-hidden">
@@ -297,17 +523,47 @@ function DataIngestionMergedPanel({
           </button>
         </div>
       </div>
+
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-        <p className="text-[11px] text-gray-400 leading-relaxed">
-          Configure data cleaning from the WideTable list (<span className="text-gray-500">Data Cleaning</span>).
-        </p>
-        <div className="rounded-xl border border-gray-200 bg-slate-100/70 p-3 space-y-3">
-          <p className="text-xs font-medium text-gray-500 tracking-wide">Output paths</p>
-          <ReadonlyCopyRow label="Raw Data Result" value={rawTable} />
-          {dataCleaningEnabled && <ReadonlyCopyRow label="Cleaned Data Result" value={cleanedTable} />}
-          <ReadonlyCopyRow label="Data Report path" value={rawS3} />
-          {dataCleaningEnabled && <ReadonlyCopyRow label="Cleaned Data Report path" value={cleanedReportPath} />}
-        </div>
+        <DrawerTabs tab={tab} onTab={setTab} showLastInstance={showLastInstance} />
+
+        {tab === "config" ? (
+          <>
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              Configure data cleaning from the WideTable list (<span className="text-gray-500">Data Cleaning</span>).
+            </p>
+            <div className="rounded-xl border border-gray-200 bg-slate-100/70 p-3 space-y-3">
+              <p className="text-xs font-medium text-gray-500 tracking-wide">Output paths</p>
+              <ReadonlyCopyRow label="Raw Data Result" value={rawTable} />
+              {dataCleaningEnabled && <ReadonlyCopyRow label="Cleaned Data Result" value={cleanedTable} />}
+              <ReadonlyCopyRow label="Data Report path" value={rawS3} />
+              {dataCleaningEnabled && <ReadonlyCopyRow label="Cleaned Data Report path" value={cleanedReportPath} />}
+            </div>
+          </>
+        ) : (
+          instance && (
+            <>
+              <div className="flex items-center gap-2">
+                <InstanceStatusBadge status={instance.status} />
+                {nodeStatus && (
+                  <span className={`text-xs px-1.5 py-px rounded ${STATUS_STYLES[nodeStatus].badge} ${STATUS_STYLES[nodeStatus].badgeText}`}>
+                    node · {STATUS_STYLES[nodeStatus].label}
+                  </span>
+                )}
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-slate-100/70 p-3">
+                <p className="text-xs font-medium text-gray-500 tracking-wide mb-2">Last Instance</p>
+                <StatRow label="Instance ID" value={instance.id} />
+                <StatRow label="Start" value={instance.startTime || "—"} />
+                <StatRow label="Finish" value={instance.finishTime || "—"} />
+                <StatRow label="Duration" value={instance.duration || "—"} />
+                <StatRow label="Raw Data Table" value={rawTable} />
+                <StatRow label="Rows cnt" value={instance.rowsCnt || "—"} />
+                <StatRow label="Columns cnt" value={instance.columnsCnt || "—"} />
+              </div>
+            </>
+          )
+        )}
       </div>
       <div className="px-4 py-2 border-t border-gray-50">
         <span className="text-xs text-gray-400">Node · Data Ingestion config</span>
@@ -867,15 +1123,16 @@ function FrameTablePanel({
 
 // ─── Feature Group Panel ───────────────────────────────────────────────────────
 function FeatureGroupPanel({
-  nodeId,
+  defaultFg,
   onClose,
   initialFg,
 }: {
-  nodeId: NodeId;
+  /** The Feature Group this node stands for — the node title is the FG name. */
+  defaultFg: string;
   onClose: () => void;
   initialFg?: FeatureGroupNodeSnapshot;
 }) {
-  const defaultFgName = initialFg?.selectedFg ?? DEFAULT_FG_BY_NODE[nodeId] ?? "";
+  const defaultFgName = initialFg?.selectedFg ?? defaultFg;
   const [fgSearch, setFgSearch] = useState(defaultFgName);
   const [fgOpen, setFgOpen] = useState(false);
   const [selectedFg, setSelectedFg] = useState(defaultFgName);
@@ -1176,6 +1433,8 @@ function NodeConfigPanel({
   ingestionConfig,
   dataCleaningEnabled,
   featureGroupInitial,
+  instance,
+  nodeStatus,
 }: {
   node: NodeDef;
   onClose: () => void;
@@ -1183,22 +1442,30 @@ function NodeConfigPanel({
   ingestionConfig?: DataIngestionConfigSnapshot;
   dataCleaningEnabled: boolean;
   featureGroupInitial?: FeatureGroupNodeSnapshot;
+  instance?: Instance | null;
+  nodeStatus?: NodeStatus;
 }) {
-  if (node.id === "B") {
+  if (node.type === "source") {
     return <FrameTablePanel onClose={onClose} initialFrame={frameTableInitial} />;
   }
-  if (node.id === "F") {
+  if (node.type === "sink" || node.type === "end") {
     return (
       <DataIngestionMergedPanel
         onClose={onClose}
         ingestionConfig={ingestionConfig}
         dataCleaningEnabled={dataCleaningEnabled}
+        instance={instance}
+        nodeStatus={nodeStatus}
       />
     );
   }
   if (node.type === "feature") {
     return (
-      <FeatureGroupPanel nodeId={node.id} onClose={onClose} initialFg={featureGroupInitial} />
+      <FeatureGroupPanel
+        defaultFg={node.title}
+        onClose={onClose}
+        initialFg={featureGroupInitial}
+      />
     );
   }
   return null;
@@ -1346,14 +1613,38 @@ export function CanvasPage({
   );
   const [selectedInstId, setSelectedInstId] = useState<string | null>(initialInstanceId ?? null);
   const selectedInst = instances.find(i => i.id === selectedInstId) ?? null;
-  const nodeStatuses = selectedInst ? getMockNodeStatuses(selectedInst.status) : undefined;
 
-  // ── Node positions (mutable for drag) ─────────────────────────────────────
-  const [nodes, setNodes] = useState<NodeDef[]>(() =>
-    canvasSnapshot?.nodes?.length
-      ? canvasSnapshot.nodes.map((n) => ({ ...n }))
-      : INITIAL_NODES.map((n) => ({ ...n }))
+  // Deep-linking from one instance to another reuses this component, so the props must
+  // drive the selection rather than only seeding it on first mount.
+  useEffect(() => {
+    if (initialInstanceId) {
+      setSelectedInstId(initialInstanceId);
+      setViewMode("instance-view");
+      setSelectedNodeId(null);
+    }
+  }, [initialInstanceId]);
+
+  // ── Graph (nodes + edges) ──────────────────────────────────────────────────
+  // Fall back to the default snapshot so the mock canvas is never empty in either mode.
+  const initialGraph = useMemo(() => canvasSnapshot ?? createDefaultCanvasSnapshot(), [canvasSnapshot]);
+  const [nodes, setNodes] = useState<NodeDef[]>(() => initialGraph.nodes.map((n) => ({ ...n })));
+  const [edges] = useState<CanvasEdge[]>(() => initialGraph.edges.map((e) => [...e] as CanvasEdge));
+
+  const instanceView = viewMode === "instance-view";
+  const nodeStatuses = useMemo(
+    () => (selectedInst ? getMockNodeStatuses(selectedInst.status, nodes) : undefined),
+    [selectedInst, nodes]
   );
+  const progress = nodeStatuses ? getRunProgress(nodeStatuses) : null;
+
+  // ── Canvas display options (Graph Config) ──────────────────────────────────
+  const [showLegend, setShowLegend] = useState(true);
+  const [showParams, setShowParams] = useState(true);
+
+  // ── Canvas tool mode ───────────────────────────────────────────────────────
+  // Read-only instance view pans by default; editing defaults to selecting nodes.
+  const [tool, setTool] = useState<CanvasTool>(mode === "instance" ? "pan" : "select");
+  const effectiveTool: CanvasTool = instanceView ? "pan" : tool;
 
   // ── Selected node ──────────────────────────────────────────────────────────
   const [selectedNodeId, setSelectedNodeId] = useState<NodeId | null>(null);
@@ -1368,6 +1659,7 @@ export function CanvasPage({
   const [showMetaModal, setShowMetaModal] = useState(false);
   const [showTriggerModal, setShowTriggerModal] = useState(false);
   const [showExecConfig, setShowExecConfig] = useState(false);
+  const [showGraphConfig, setShowGraphConfig] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<"history" | "action" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -1377,6 +1669,7 @@ export function CanvasPage({
   const panStart = useRef({ mx: 0, my: 0, px: 0, py: 0 });
   const historyRef = useRef<HTMLDivElement>(null);
   const execConfigRef = useRef<HTMLDivElement>(null);
+  const graphConfigRef = useRef<HTMLDivElement>(null);
   const actionRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 800, h: 500 });
 
@@ -1398,8 +1691,10 @@ export function CanvasPage({
   useEffect(() => {
     const el = containerRef.current; if (!el) return;
     const { width, height } = el.getBoundingClientRect();
+    const b = canvasBounds(nodes);
     const iz = 0.88;
-    setPan({ x: width / 2 - 530 * iz, y: height / 2 - 256 * iz });
+    setPan({ x: width / 2 - (b.minX + b.w / 2) * iz, y: height / 2 - (b.minY + b.h / 2) * iz });
+    // Runs once: later node edits keep the user's own pan.
   }, []);
 
   // ── Wheel zoom ──────────────────────────────────────────────────────────��──
@@ -1421,6 +1716,9 @@ export function CanvasPage({
   // ── Node drag start ────────────────────────────────────────────────────────
   const handleNodeDragStart = (nodeId: NodeId, e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    // Read-only Instance View: nodes are fixed, the drag falls through to panning.
+    if (instanceView) return;
+    if (e.altKey) return; // Alt-drag is reserved for the pan gesture below.
     e.stopPropagation();
     dragMoved.current = false;
     const n = nodes.find(x => x.id === nodeId)!;
@@ -1428,12 +1726,25 @@ export function CanvasPage({
   };
 
   // ── Mouse handlers on canvas ───────────────────────────────────────────────
-  const onCanvasMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 2) { // right-drag to pan
-      isPanning.current = true;
-      panStart.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y };
-    }
+  const beginPan = (e: React.MouseEvent) => {
+    isPanning.current = true;
+    panStart.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y };
   };
+
+  const onCanvasMouseDown = (e: React.MouseEvent) => {
+    // Middle-click and right-drag always pan; left-drag pans in Pan mode.
+    if (e.button === 1 || e.button === 2 || e.button === 0) beginPan(e);
+    setSelectedNodeId(null);
+  };
+
+  /** Panning also starts from a node when the tool is Pan, or while Alt is held. */
+  const onNodePanMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0 || (!instanceView && !e.altKey)) return;
+    e.stopPropagation();
+    setSelectedNodeId(null);
+    beginPan(e);
+  };
+
   const onCanvasMouseMove = (e: React.MouseEvent) => {
     if (dragState.current) {
       const dx = (e.clientX - dragState.current.startMx) / zoomRef.current;
@@ -1480,15 +1791,40 @@ export function CanvasPage({
     if (!containerRef.current) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
     const pad = 80;
-    // current node extents
-    const xs = nodes.flatMap(n => [n.x, n.x + n.w]);
-    const ys = nodes.flatMap(n => [n.y, n.y + n.h]);
-    const minX = Math.min(...xs)-20; const maxX = Math.max(...xs)+20;
-    const minY = Math.min(...ys)-20; const maxY = Math.max(...ys)+20;
+    const b = canvasBounds(nodes);
+    const minX = b.minX - 20; const maxX = b.maxX + 20;
+    const minY = b.minY - 20; const maxY = b.maxY + 20;
     const cw = maxX-minX; const ch = maxY-minY;
     const nz = Math.min((width-pad)/cw, (height-pad)/ch, 1.5);
     zoomRef.current = nz; setZoomState(nz);
     setPan({ x: (width-cw*nz)/2-minX*nz, y: (height-ch*nz)/2-minY*nz });
+  };
+
+  /**
+   * Auto layout: re-derive node positions from the DAG shape (source → Feature Group grid
+   * → sink) and reset the viewport. Feature Groups keep their current reading order.
+   */
+  const autoLayout = () => {
+    const source = nodes.find((n) => n.type === "source");
+    const features = nodes.filter((n) => n.type === "feature");
+    const sink = nodes.find((n) => n.type === "sink" || n.type === "end");
+    if (!source || !sink || features.length === 0) return;
+
+    const cols = fgGridCols(features.length);
+    const fgBlock = canvasBounds(features);
+    const midY = (h: number) => fgBlock.minY + fgBlock.h / 2 - h / 2;
+    const rightX = fgBlock.maxX + SINK_GAP_X;
+
+    setNodes(
+      nodes.map((n) => {
+        if (n.type === "source") return { ...n, x: SOURCE_X, y: midY(n.h) };
+        if (n.type === "sink" || n.type === "end") return { ...n, x: rightX, y: midY(n.h) };
+        const i = features.findIndex((f) => f.id === n.id);
+        const pos = fgGridPosition(i, cols);
+        return { ...n, x: pos.x, y: pos.y };
+      })
+    );
+    requestAnimationFrame(() => fitToScreen());
   };
 
   const handleZoomBtn = (delta: number) => {
@@ -1504,8 +1840,14 @@ export function CanvasPage({
   useEffect(() => {
     const h = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (historyRef.current?.contains(t) || execConfigRef.current?.contains(t) || actionRef.current?.contains(t)) return;
+      if (
+        historyRef.current?.contains(t) ||
+        execConfigRef.current?.contains(t) ||
+        graphConfigRef.current?.contains(t) ||
+        actionRef.current?.contains(t)
+      ) return;
       setActiveDropdown(null);
+      setShowGraphConfig(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -1548,6 +1890,18 @@ export function CanvasPage({
   const backToConfig = () => {
     setViewMode("current-config"); setSelectedInstId(null); setSelectedNodeId(null);
   };
+
+  // ── Esc closes the drawer / open menus ─────────────────────────────────────
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setSelectedNodeId(null);
+      setShowGraphConfig(false);
+      setActiveDropdown(null);
+    };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, []);
 
   // version helper
   const versionOf = (idx: number) => instances.length - idx;
@@ -1726,30 +2080,52 @@ export function CanvasPage({
 
       {/* ── Instance info strip ───────────────────────────────────────────── */}
       {viewMode === "instance-view" && selectedInst && (
-        <div className="shrink-0 border-b border-gray-100 px-5 py-2 flex items-center justify-between gap-4 bg-[#eff6ff]">
-          <div className="flex items-center gap-1 text-xs text-gray-500 min-w-0">
-            <span className="text-gray-400 shrink-0">⊙</span>
+        <div className="shrink-0 border-b border-gray-100 px-5 py-2 flex items-center justify-between gap-4 bg-[#eff6ff] flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 min-w-0 flex-wrap">
+            <History size={13} className="text-blue-500 shrink-0" />
             <span className="shrink-0">Instance</span>
             <span className="text-blue-600 font-mono shrink-0">{selectedInst.id}</span>
-            {selectedInst.createTime && <><span className="text-gray-300 shrink-0">·</span></>}
-            {selectedInst.startTime   && <><span className="text-gray-300 shrink-0">·</span></>}
-            {selectedInst.finishTime  && <><span className="text-gray-300 shrink-0">·</span></>}
-            {selectedInst.duration    && <><span className="text-gray-300 shrink-0">·</span><span className="shrink-0">Duration: {selectedInst.duration}</span></>}
+            {selectedInst.createTime && (
+              <>
+                <span className="text-gray-300 shrink-0">·</span>
+                <span className="shrink-0">Trigger: {selectedInst.createTime}</span>
+              </>
+            )}
+            <span className="text-gray-300 shrink-0">·</span>
+            <span className="shrink-0">Start: {selectedInst.startTime || "—"}</span>
+            <span className="text-gray-300 shrink-0">·</span>
+            <span className="shrink-0">Finish: {selectedInst.finishTime || "—"}</span>
+            {selectedInst.duration && (
+              <>
+                <span className="text-gray-300 shrink-0">·</span>
+                <span className="shrink-0">Duration: {selectedInst.duration}</span>
+              </>
+            )}
+            {progress && (
+              <>
+                <span className="text-gray-300 shrink-0">·</span>
+                <span className="shrink-0 tabular-nums">
+                  Stages: {progress.done}/{progress.total} done
+                  {progress.failed > 0 && <span className="text-red-500"> · {progress.failed} failed</span>}
+                </span>
+              </>
+            )}
           </div>
           {/* Legend */}
           <div className="flex items-center gap-3 shrink-0">
-            {([
-              { dot: "bg-emerald-400", label: "Success"      },
-              { dot: "bg-blue-400",    label: "Running"      },
-              { dot: "bg-red-400",     label: "Failed"       },
-              { dot: "bg-yellow-400",  label: "Cache Skipped"},
-              { dot: "bg-gray-300",    label: "Pending"      },
-            ]).map(({ dot, label }) => (
-              <div key={label} className="flex items-center gap-1">
-                <span className={`w-2 h-2 rounded-full ${dot}`} />
-                <span className="text-xs text-gray-500">{label}</span>
-              </div>
-            ))}
+            {showLegend &&
+              ([
+                { dot: "bg-emerald-400", label: "Success" },
+                { dot: "bg-blue-400",    label: "Running" },
+                { dot: "bg-red-400",     label: "Failed" },
+                { dot: "bg-yellow-400",  label: "Cache Skipped" },
+                { dot: "bg-gray-300",    label: "Waiting" },
+              ] as const).map(({ dot, label }) => (
+                <div key={label} className="flex items-center gap-1">
+                  <span className={`w-2 h-2 rounded-full ${dot}`} />
+                  <span className="text-xs text-gray-500">{label}</span>
+                </div>
+              ))}
             <div className="w-px h-3 bg-gray-300" />
             <span className="text-xs bg-gray-200 px-2 py-0.5 rounded font-mono text-[#004ed6]">READ-ONLY</span>
           </div>
@@ -1776,22 +2152,70 @@ export function CanvasPage({
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          {/* Transform wrapper */}
+          {/* Top-right canvas overlay: Graph Config */}
+          <div className="absolute top-0 right-0 z-20 h-14 flex items-center gap-4 px-7 pointer-events-none">
+            <div ref={graphConfigRef} className="relative pointer-events-auto">
+              <button
+                type="button"
+                onClick={() => setShowGraphConfig((v) => !v)}
+                className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                Graph Config
+                <ChevronDown size={11} className={`transition-transform ${showGraphConfig ? "rotate-180" : ""}`} />
+              </button>
+              {showGraphConfig && (
+                <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-30 py-1 overflow-hidden text-left">
+                  <div className="px-3 py-1.5 text-xs text-gray-400 border-b border-gray-50">Display</div>
+                  {([
+                    { label: "Status legend", checked: showLegend, onToggle: () => setShowLegend(v => !v) },
+                    { label: "Node parameters", checked: showParams, onToggle: () => setShowParams(v => !v) },
+                  ] as const).map(({ label, checked, onToggle }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={onToggle}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                    >
+                      <span>{label}</span>
+                      <span className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${checked ? "bg-teal-500" : "bg-gray-300"}`}>
+                        <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${checked ? "left-4.5" : "left-0.5"}`} />
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Transform wrapper — sized to the graph bounds so no node is clipped. */}
           <div style={{
-            position: "absolute", inset: 0,
+            position: "absolute",
+            left: 0, top: 0,
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             transformOrigin: "0 0",
-            width: CANVAS_W, height: CANVAS_H,
+            width: canvasBounds(nodes).w,
+            height: canvasBounds(nodes).h,
           }}>
-            <CanvasEdges nodes={nodes} instanceView={viewMode === "instance-view"} nodeStatuses={nodeStatuses} />
+            <CanvasEdges
+              nodes={nodes}
+              edges={edges}
+              instanceView={instanceView}
+              nodeStatuses={nodeStatuses}
+            />
             {nodes.map(node => (
               <PipelineNodeCard
                 key={node.id}
-                node={node}
+                node={showParams ? node : { ...node, params: [] }}
                 selected={selectedNodeId === node.id}
-                instanceView={viewMode === "instance-view"}
+                instanceView={instanceView}
                 nodeStatus={nodeStatuses?.[node.id]}
-                onDragStart={(e) => handleNodeDragStart(node.id, e)}
+                ports={!instanceView}
+                onDragStart={(e) => {
+                  // Pan mode (and read-only Instance View) pan from a node too, so the
+                  // whole canvas is draggable no matter what is under the cursor.
+                  if (effectiveTool === "pan" || e.altKey) { onNodePanMouseDown(e); return; }
+                  handleNodeDragStart(node.id, e);
+                }}
                 onClick={() => {
                   if (dragMoved.current) { dragMoved.current = false; return; }
                   setSelectedNodeId(n => n === node.id ? null : node.id);
@@ -1805,19 +2229,34 @@ export function CanvasPage({
 
           {/* Bottom-left controls */}
           <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-10">
-            <ZoomControls zoom={zoom} onZoom={handleZoomBtn} onFit={fitToScreen} />
-            <Minimap nodes={nodes} pan={pan} zoom={zoom} cw={containerSize.w} ch={containerSize.h} />
+            <div className="flex items-center gap-2">
+              <ZoomControls zoom={zoom} onZoom={handleZoomBtn} onFit={fitToScreen} />
+              <CanvasToolbar
+                tool={effectiveTool}
+                onTool={setTool}
+                onAutoLayout={autoLayout}
+                editable={!instanceView}
+              />
+            </div>
+            <Minimap nodes={nodes} edges={edges} pan={pan} zoom={zoom} cw={containerSize.w} ch={containerSize.h} />
           </div>
 
-          {/* Bottom hint */}
+          {/* Bottom hint — describes the gesture that actually works in this mode. */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap pointer-events-none">
-            Right-drag to pan · Scroll to zoom · Drag node to reposition
+            {instanceView
+              ? "Drag to pan · Scroll to zoom · Click a node for its run detail"
+              : effectiveTool === "select"
+                ? "Drag a node to reposition · Scroll to zoom · Alt-drag to pan"
+                : "Drag to pan · Scroll to zoom · Switch to Select to move nodes"}
           </div>
         </div>
 
         {/* Right panel */}
         {selectedNodeId && (() => {
           const node = nodes.find(n => n.id === selectedNodeId)!;
+          const fgSnapshot = node.type === "feature"
+            ? canvasSnapshot?.featureGroups?.[node.title]
+            : undefined;
           return (
             <NodeConfigPanel
               node={node}
@@ -1825,12 +2264,9 @@ export function CanvasPage({
               frameTableInitial={canvasSnapshot?.frameTable}
               ingestionConfig={canvasSnapshot?.dataIngestion}
               dataCleaningEnabled={Boolean(canvasSnapshot?.dataCleaning?.enabled)}
-              featureGroupInitial={
-                node.type === "feature" &&
-                (node.id === "C" || node.id === "D" || node.id === "E")
-                  ? canvasSnapshot?.featureGroups?.[node.id]
-                  : undefined
-              }
+              featureGroupInitial={fgSnapshot}
+              instance={selectedInst}
+              nodeStatus={nodeStatuses?.[node.id]}
             />
           );
         })()}
