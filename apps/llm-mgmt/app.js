@@ -3,6 +3,7 @@
  * 领域规则：
  * - LLM 资产（逻辑实体）：Name 全局唯一；Region / Provider / Model Type / Model Name /
  *   API Key / Endpoint / Owner 为必填元信息；Model Type 枚举 Chat / Embedding
+ *   演示数据：API Key 一律存脱敏占位值，真实密钥不写入代码与仓库
  * - Provider 枚举：OpenAI / Gemini / Claude / Compass
  * - Team Access：None (Private) 表示仅 Owner 可用；选择 Biz Team 后该团队可用
  * - Check：校验 Endpoint 连通性（原型为 mock 模拟）
