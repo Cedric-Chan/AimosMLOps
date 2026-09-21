@@ -11,3 +11,9 @@ local-dist/
 # 说明见工作区级 REFERENCE-REPOS.md。
 aimos-model*/
 *production reference*/
+
+# 内部评审 / 实测文档（仅本地留存，禁止发布）——————
+# 含线上真实库表名、配置名、实测数据量，仅用于内部方案 review。
+# 与线上真实系统对应的分析文档一律不要提交，发布版请另写脱敏版。
+docs/**/_internal/
+docs/feature-store/design/widetable-join-performance-review.md
