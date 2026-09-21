@@ -90,8 +90,9 @@ Aimos MLOps/
 │   ├── feature-tag/               # Feature Tag 领域规则与交互规格
 │   ├── feature-store/             # Feature Store 设计文档（架构 / PRD / 前端规格 / API / 调研）
 │   └── model-experiment/          # Model Experiment 文档（系统架构 / PRD / 流水线 / 术语表 / API）
-└── .github/workflows/
-    └── deploy-pages.yml           # 构建两个原型 + 平台壳，发布 GitHub Pages
+└── scripts/
+    ├── assemble.sh                # 组装站点到 local-dist/
+    └── deploy.sh                  # 推送 main/gh-pages 到 GitHub 并轮询 Pages 构建
 ```
 
 ## 如何迭代维护
@@ -100,18 +101,18 @@ Aimos MLOps/
 - **迭代 Feature Store 原型**：改 `apps/feature-store/`（Vite + React），`pnpm install && pnpm dev` 本地开发。
 - **迭代 Model Experiment 原型**：改 `apps/model-experiment/`，`npm install && npm run dev`。
 - **文档**：平台级放 `docs/platform/`，模块级分别放 `docs/feature-store/`、`docs/model-experiment/`。
-- 推送到 `main` 后，Actions 自动构建并发布 Pages（首次需在仓库 Settings → Pages 将 Source 设为 **GitHub Actions**）。
+- 发布站点用 `./scripts/deploy.sh`（推 `gh-pages` 后 GitHub 自动重建 Pages）。
 
-## 部署（GitLab → GitHub 镜像链路）
+## 部署（GitHub 单一远端）
 
 ```bash
-./scripts/deploy.sh        # 组装站点 → 推 main/gh-pages 到 GitLab → 镜像同步 GitHub → Pages 自动重建（含状态轮询）
+./scripts/deploy.sh        # 组装站点 → 推 main/gh-pages 到 GitHub → Pages 自动重建（含状态轮询）
 ./scripts/deploy.sh --no-watch
 ```
 
-- 源码（main）与部署产物（gh-pages）**都推 GitLab**，由 GitLab 的 push mirror（仅受保护分支）自动同步 GitHub
-- GitHub 端内置 `pages-build-deployment` 在 gh-pages 更新后自动重建站点，无需手动操作
-- ⚠️ 不要直推 GitHub main（会造成与 GitLab 分叉，导致 push mirror 报错）
+- 源码（main）与部署产物（gh-pages）**都推 GitHub**（`origin`），GitHub 的 `pages-build-deployment` 在 gh-pages 更新后自动重建站点
+- 线上站点：<https://cedric-chan.github.io/AimosMLOps/>
+- GitLab 侧（`git.garena.com/cedric.chencan/AimosMLOps`）已冻结为只读归档，源与内容留在 GitHub
 - 本地预览：`./scripts/assemble.sh` 后对 `local-dist/` 起任意静态服务器
 
 ## 历史仓库（已冻结，不再维护）

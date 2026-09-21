@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 一键部署：组装站点 → main/gh-pages 推 GitLab → push mirror 同步 GitHub → Pages 自动重建。
+# 一键部署：组装站点 → main/gh-pages 直接推 GitHub（origin）→ Pages 自动重建。
 #
 # 前提：工作区已 commit（本脚本不会自动提交源码变更）。
 # 用法：./scripts/deploy.sh [--no-watch]
@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-REPO_GITLAB="https://git.garena.com/cedric.chencan/AimosMLOps.git"
+REPO_REMOTE="https://github.com/Cedric-Chan/AimosMLOps.git"
 PAGES_URL="https://cedric-chan.github.io/AimosMLOps/"
 WATCH=true
 [ "${1:-}" = "--no-watch" ] && WATCH=false
@@ -22,13 +22,13 @@ fi
 echo "▶ 1/3 组装站点"
 ./scripts/assemble.sh
 
-echo "▶ 2/3 推送源码 main → GitLab（push mirror 自动同步 GitHub）"
-git push gitlab-mlops main
+echo "▶ 2/3 推送源码 main → GitHub"
+git push origin main
 
-echo "▶ 3/3 发布 gh-pages → GitLab（push mirror 同步 GitHub，内置 hook 自动重建 Pages）"
+echo "▶ 3/3 发布 gh-pages → GitHub（内置 pages-build-deployment 自动重建 Pages）"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
-git clone --quiet "$REPO_GITLAB" "$WORK"
+git clone --quiet "$REPO_REMOTE" "$WORK"
 git -C "$WORK" checkout --quiet gh-pages
 git -C "$WORK" rm -rqf .
 cp -r local-dist/. "$WORK"/
@@ -39,12 +39,12 @@ if git -C "$WORK" diff --cached --quiet; then
 else
   git -C "$WORK" commit --quiet -m "deploy: $(date '+%F %T') via scripts/deploy.sh"
   git -C "$WORK" push --quiet origin gh-pages
-  echo "已推送 gh-pages（镜像将自动同步 GitHub）"
+  echo "已推送 gh-pages 到 GitHub"
 fi
 NEW_GH_SHA=$(git -C "$WORK" rev-parse HEAD)
 
-echo "✅ GitLab 已更新"
-echo "   - 源码：https://git.garena.com/cedric.chencan/AimosMLOps"
+echo "✅ GitHub 已更新"
+echo "   - 源码：https://github.com/Cedric-Chan/AimosMLOps"
 echo "   - Pages 站点（约 1-2 分钟后自动重建）：$PAGES_URL"
 
 # ── 轮询 GitHub Pages 构建状态（可选） ──
