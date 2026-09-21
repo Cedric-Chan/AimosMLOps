@@ -122,3 +122,16 @@ Aimos MLOps/
 | [Cedric-Chan/ModelExperiment](https://github.com/Cedric-Chan/ModelExperiment) | `docs/prototype/model-experiment-web` → `apps/model-experiment`；文档 → `docs/model-experiment/` |
 
 原仓库的 GitHub Pages（FeatureStore / ModelExperiment）仍在线但不再更新，请以本仓库 Pages 为准。
+
+## 生产参考代码（内部专有，不入库）
+
+线上 Aimos 系统的真实代码库（内部 GitLab，需内网访问权限）已 clone 到工作区的**同级目录**
+`aimos-model (production reference)/`，作为只读参考依据：
+
+- **不在本仓库内**，也不被本仓库跟踪 —— 这是刻意的：内部代码不得外流
+- 快照为 shallow（`--depth 1`），远端 push 已禁用（`remote.origin.pushurl=DISABLED.read-only-reference`），工作区文件已 `chmod a-w`
+- 完整仓库地址与更新方式见工作区级 `REFERENCE-REPOS.md`（不在任何 git 仓库内，不会被推送）
+
+> ⚠️ 本仓库（GitHub `Cedric-Chan/AimosMLOps`）是 **PUBLIC**。任何提交都会立刻公开，
+> 且 git 历史 + Pages 产物难以后撤 —— 涉及内部信息的内容请先脱敏再提交。
+

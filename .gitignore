@@ -4,3 +4,10 @@ dist/
 *.local
 local-dist/
 *.visual-check.*
+
+# 生产参考代码（内部专有，绝不可入库/推送）——————
+# 本仓库是 PUBLIC，误提交内部代码会立刻公开且无法真正撤回。
+# 该目录正常位于本仓库之外（工作区同级）；此处为防误复制的兜底闸门。
+# 说明见工作区级 REFERENCE-REPOS.md。
+aimos-model*/
+*production reference*/
