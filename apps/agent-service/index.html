@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Service · Aimos</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+  <!-- ══════════════════════ 1. 列表页 ══════════════════════ -->
+  <div id="page-list" hidden>
+    <div class="page">
+
+      <!-- 筛选栏（可折叠） -->
+      <div class="card filter-card">
+        <div class="filter-grid" id="filter-grid">
+          <div class="filter-item"><label>Name：</label><input id="f-name" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>Owner：</label><input id="f-owner" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>Owning Team：</label>
+            <select id="f-team"><option value="">Please select</option></select>
+          </div>
+          <!-- spec §2 记录 Region 为下拉；本原型按需求用文本输入，见 app.js 顶部注释 -->
+          <div class="filter-item"><label>Region：</label><input id="f-region" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>Status：</label>
+            <select id="f-status"><option value="">Please select</option></select>
+          </div>
+          <div class="filter-item" data-extra hidden><label>Description：</label><input id="f-desc" type="text" placeholder="Please enter"></div>
+          <div class="filter-actions">
+            <button class="btn btn-default" id="btn-reset">Reset</button>
+            <button class="btn btn-primary" id="btn-query">Query</button>
+            <button class="link-btn collapse-toggle" id="btn-collapse">Collapse ∧</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 列表卡片 -->
+      <div class="card">
+        <div class="toolbar">
+          <h2 class="toolbar-title">Agent Service</h2>
+          <span class="toolbar-spacer"></span>
+          <button class="btn btn-primary" id="btn-create">Create Agent</button>
+        </div>
+
+        <div class="table-scroll">
+          <table class="mm-table">
+            <thead>
+              <tr>
+                <th>Name</th><th>Owner</th><th>Owning Team</th><th>Region</th><th>Status</th>
+                <th>Description</th><th>Create Time</th><th>Update Time</th><th class="col-action">Action</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span id="page-total" class="page-total"></span>
+          <div id="page-buttons" class="page-buttons"></div>
+          <select id="page-size">
+            <option value="10" selected>10 / page</option>
+            <option value="20">20 / page</option>
+            <option value="50">50 / page</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 2. 配置台 ══════════════════════ -->
+  <div id="page-config" hidden>
+    <div class="page">
+
+      <div class="cfg-header">
+        <div class="cfg-header-left">
+          <button class="back-arrow" id="btn-config-back" title="Back to Agent Service">←</button>
+          <div class="cfg-title-wrap">
+            <div class="cfg-title" id="cfg-name">—</div>
+            <div class="cfg-code">Agent Code: <span class="mono" id="cfg-uuid">—</span></div>
+          </div>
+        </div>
+        <div class="cfg-header-right">
+          <span class="draft-ts" id="cfg-draft-ts">Draft updated: —</span>
+          <button class="btn btn-default" id="btn-version-mgmt">Version Management</button>
+          <button class="btn btn-default" id="btn-cfg-api-debug">API Debug</button>
+          <button class="btn btn-primary" id="btn-publish">Publish</button>
+        </div>
+      </div>
+
+      <div class="cfg-layout">
+        <!-- 左栏：可滚动配置区 -->
+        <div class="cfg-left" id="cfg-left">
+
+          <!-- 卡 1 · Model -->
+          <div class="card cfg-card">
+            <div class="cfg-card-head">
+              <h3 class="cfg-card-title">Model</h3>
+            </div>
+            <div class="field">
+              <label class="field-label">LLM Model</label>
+              <select id="cfg-model"><option value="">Select model</option></select>
+              <div class="field-hint">Models are registered in AI Hub / LLM Mgmt; this page only references them.</div>
+            </div>
+            <div class="adv-panel">
+              <button class="adv-toggle" id="btn-adv" type="button" aria-expanded="false">
+                <span>Advanced Settings</span><span class="adv-caret">▾</span>
+              </button>
+              <div class="adv-body" id="adv-body" hidden>
+                <div class="adv-grid">
+                  <div class="field">
+                    <label class="field-label">Temperature</label>
+                    <input id="cfg-temp" type="text" value="0.3">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Top P</label>
+                    <input id="cfg-topp" type="text" value="0.95">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Max Tokens</label>
+                    <input id="cfg-maxtok" type="text" value="2048">
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Tool Call Timeout (s)</label>
+                    <input id="cfg-toolto" type="text" value="30">
+                  </div>
+                </div>
+                <div class="field-hint">Panel content is not captured in the platform; these four are prototype placeholders pending confirmation.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 卡 2 · Prompt -->
+          <div class="card cfg-card">
+            <div class="cfg-card-head">
+              <h3 class="cfg-card-title">Prompt</h3>
+              <button class="link-btn teal" id="btn-manage-vars">+ Manage variables</button>
+            </div>
+            <p class="card-note">A prompt is required to save or publish.</p>
+            <div class="prompt-wrap">
+              <textarea id="cfg-prompt" class="prompt-editor" spellcheck="false"
+                placeholder="Define the Agent role, task, rules, and response behavior. Type / for variables, or @ for tools and knowledge bases."></textarea>
+              <div class="trigger-pop hidden" id="trigger-pop"></div>
+            </div>
+            <div class="field-hint">Type <kbd>/</kbd> for variables, or <kbd>@</kbd> for tools and knowledge bases.</div>
+          </div>
+
+          <!-- 卡 3 · Tools -->
+          <div class="card cfg-card">
+            <div class="cfg-card-head">
+              <h3 class="cfg-card-title">Tools</h3>
+              <button class="link-btn teal" id="btn-tool-settings">Tool Settings</button>
+            </div>
+            <div class="res-list" id="res-list">
+              <div class="res-row" data-res="Tools">
+                <div class="res-name">Tools<span class="res-desc">Callable functions exposed to the Agent.</span></div>
+                <button class="btn btn-sm" data-configure="Tools">Configure</button>
+              </div>
+              <div class="res-row" data-res="Knowledge Bases">
+                <div class="res-name">Knowledge Bases<span class="res-desc">Retrieval sources referenced with @.</span></div>
+                <button class="btn btn-sm" data-configure="Knowledge Bases">Configure</button>
+              </div>
+              <div class="res-row" data-res="Skills">
+                <div class="res-name">Skills<span class="res-desc">Packaged capabilities the Agent can invoke.</span></div>
+                <button class="btn btn-sm" data-configure="Skills">Configure</button>
+              </div>
+              <div class="res-row" data-res="MCPs">
+                <div class="res-name">MCPs<span class="res-desc">MCP servers providing external tools.</span></div>
+                <button class="btn btn-sm" data-configure="MCPs">Configure</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 卡 4 · Conversation Memory -->
+          <div class="card cfg-card">
+            <div class="cfg-card-head">
+              <h3 class="cfg-card-title">Conversation Memory</h3>
+            </div>
+            <p class="card-note">Number of recent conversation rounds supplied to the Agent.</p>
+            <div class="memory-row">
+              <input type="range" id="mem-range" min="0" max="30" step="1" value="10" aria-label="Conversation memory rounds">
+              <div class="stepper">
+                <button class="stepper-btn" id="mem-minus" type="button" aria-label="Decrease">−</button>
+                <input type="text" id="mem-num" value="10" aria-label="Conversation memory rounds value">
+                <button class="stepper-btn" id="mem-plus" type="button" aria-label="Increase">+</button>
+              </div>
+            </div>
+            <div class="field-hint" id="mem-hint">0 means no memory: every turn is handled independently.</div>
+          </div>
+        </div>
+
+        <!-- 右栏：Preview & Debug -->
+        <div class="cfg-right">
+          <div class="card preview-card">
+            <div class="cfg-card-head">
+              <h3 class="cfg-card-title">Preview &amp; Debug</h3>
+              <button class="icon-btn" id="btn-preview-collapse" title="Collapse / expand">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </div>
+
+            <div class="preview-body" id="preview-body">
+              <!-- 空态 -->
+              <div class="preview-empty" id="preview-empty">
+                <div class="robot-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="7" width="16" height="12" rx="3"/><line x1="12" y1="3" x2="12" y2="7"/>
+                    <circle cx="12" cy="2.6" r="1.1"/><circle cx="9" cy="12.5" r="1.2"/><circle cx="15" cy="12.5" r="1.2"/>
+                    <line x1="9.5" y1="16.2" x2="14.5" y2="16.2"/>
+                  </svg>
+                </div>
+                <div class="preview-agent-name" id="preview-name">—</div>
+                <button class="btn btn-primary" id="btn-start-session">Start Session</button>
+                <p class="preview-note">Prototype session — replies are synthetic, no model is called.</p>
+              </div>
+
+              <!-- 会话态 -->
+              <div class="preview-session" id="preview-session" hidden>
+                <div class="chat-scroll" id="chat-scroll"></div>
+                <div class="chat-input-row">
+                  <input type="text" id="chat-input" placeholder="Ask this Agent…" autocomplete="off">
+                  <button class="btn btn-primary btn-sm" id="btn-chat-send">Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 3. 部署管理 ══════════════════════ -->
+  <div id="page-deployment" hidden>
+    <div class="page">
+
+      <div class="breadcrumb">
+        <a href="#/">Online Runtime</a><span class="crumb-sep">/</span><span>Agent Service</span>
+      </div>
+
+      <div class="detail-header">
+        <button class="back-arrow" id="btn-deploy-back" title="Back to Agent Service">←</button>
+        <span class="detail-title"><span id="dep-name">—</span> Deployment</span>
+      </div>
+
+      <!-- Space Resource Application -->
+      <div class="card">
+        <div class="cfg-card-head">
+          <h3 class="cfg-card-title">Space Resource Application</h3>
+        </div>
+
+        <div class="space-grid">
+          <div class="space-cell"><span class="space-k">Service ID</span><span class="space-v mono" id="sp-service">—</span></div>
+          <div class="space-cell"><span class="space-k">Ticket ID</span><span class="space-v mono" id="sp-ticket">—</span></div>
+          <div class="space-cell"><span class="space-k">Status</span><span class="space-v" id="sp-status">—</span></div>
+          <div class="space-cell"><span class="space-k">Applied Time</span><span class="space-v mono" id="sp-time">—</span></div>
+        </div>
+
+        <div class="warning-bar" id="space-warning">
+          <svg class="warn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="warn-text" id="space-warning-text">This agent has not applied for Space resources. Please apply first; deployment will be enabled when the application is complete.</span>
+          <button class="btn btn-primary btn-sm" id="btn-apply">Apply</button>
+        </div>
+      </div>
+
+      <!-- 部署记录 -->
+      <div class="card">
+        <div class="filter-grid dep-filter">
+          <div class="filter-item"><label>Version：</label><input id="d-version" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>Status：</label>
+            <div class="ms-select" id="d-status">
+              <button class="ms-toggle" id="d-status-toggle" type="button">
+                <span class="ms-tags" id="d-status-tags"><span class="ms-placeholder">Please select</span></span>
+                <span class="ms-arrow">∨</span>
+              </button>
+              <div class="ms-panel hidden" id="d-status-panel"></div>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-default" id="btn-dep-reset">Reset</button>
+            <button class="btn btn-primary" id="btn-dep-query">Query</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <label class="owned-check"><input type="checkbox" id="my-ops"> My operations only</label>
+          <span class="toolbar-spacer"></span>
+          <button class="btn btn-primary" id="btn-deploy">Deploy</button>
+        </div>
+
+        <div class="table-scroll">
+          <table class="mm-table">
+            <thead>
+              <tr><th>Version</th><th>Deployment Action</th><th>Status</th><th>Started Time</th><th>Operator</th><th>Action</th></tr>
+            </thead>
+            <tbody id="dep-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 弹窗：Create Agent ══════════════════════ -->
+  <div id="create-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">
+        <span>Create Agent Application</span>
+        <button class="modal-close" id="btn-create-close">×</button>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Name：</label>
+        <input id="c-name" type="text" placeholder="Please enter" maxlength="80">
+        <div class="form-err hidden" id="err-c-name"></div>
+      </div>
+      <div class="form-item">
+        <label>Owner：</label>
+        <input id="c-owner" type="text" readonly>
+        <div class="form-hint">Defaults to the current login and cannot be changed here.</div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Owning Team：</label>
+        <select id="c-team"><option value="">Please select</option></select>
+        <div class="form-hint">Select one of the fixed Owner's Teams.</div>
+        <div class="form-err hidden" id="err-c-team"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Region：</label>
+        <select id="c-region"><option value="">Please select</option></select>
+        <div class="form-err hidden" id="err-c-region"></div>
+      </div>
+      <div class="form-item">
+        <label>Description：</label>
+        <textarea id="c-desc" rows="4" maxlength="1000" placeholder="Please enter"></textarea>
+        <div class="char-count" id="c-desc-count">0 / 1000</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-create-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-create-submit">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 弹窗：Permission ══════════════════════ -->
+  <div id="perm-modal" class="modal-overlay hidden">
+    <div class="modal modal-wide">
+      <div class="modal-title">
+        <span id="perm-title">Permission</span>
+        <button class="modal-close" id="btn-perm-close">×</button>
+      </div>
+      <div class="perm-add-row">
+        <select id="perm-type"><option value="User">User</option><option value="Team">Team</option></select>
+        <select id="perm-object"></select>
+        <select id="perm-role"><option>Viewer</option><option>Editor</option><option>Invoker</option><option>Owner</option></select>
+        <button class="btn btn-default" id="btn-perm-add">Add</button>
+      </div>
+      <div class="perm-list" id="perm-list"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="btn-perm-done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 弹窗：API Debug ══════════════════════ -->
+  <div id="debug-modal" class="modal-overlay hidden">
+    <div class="modal modal-wide">
+      <div class="modal-title">
+        <span id="debug-title">API Debug</span>
+        <button class="modal-close" id="btn-debug-close">×</button>
+      </div>
+      <p class="card-note" id="debug-endpoint">—</p>
+      <div class="debug-section">
+        <div class="debug-label">curl</div>
+        <pre class="code-block" id="debug-curl"></pre>
+      </div>
+      <div class="debug-section">
+        <div class="debug-label">Request body</div>
+        <textarea id="debug-body" class="code-editor" rows="6" spellcheck="false"></textarea>
+      </div>
+      <div class="debug-section">
+        <div class="debug-label">Response</div>
+        <pre class="code-block" id="debug-response">// Click Send to call the endpoint</pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-debug-reset">Reset body</button>
+        <button class="btn btn-primary" id="btn-debug-send">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ 抽屉：Version Management ══════════════════════ -->
+  <div id="drawer-mask" class="drawer-mask hidden"></div>
+  <aside id="version-drawer" class="drawer hidden" aria-label="Version Management">
+    <div class="drawer-head">
+      <span class="drawer-title">Version Management</span>
+      <button class="modal-close" id="btn-drawer-close">×</button>
+    </div>
+    <div class="drawer-body">
+      <div class="draft-item current">
+        <div class="draft-main">
+          <span class="check-badge">✓</span>
+          <span class="draft-name">Current Draft</span>
+        </div>
+        <span class="draft-ts" id="drawer-draft-ts">—</span>
+      </div>
+      <div class="drawer-divider"></div>
+      <button class="link-btn teal overwrite-btn" id="btn-overwrite-draft">Overwrite Draft</button>
+      <p class="drawer-note">
+        The draft opened in this page. <b>Overwrite Draft</b> replaces it — whether it needs a source version and a
+        confirmation step is not confirmed on the platform (spec §6 / Q12).
+      </p>
+    </div>
+  </aside>
+
+  <!-- 行内 `...` 菜单（fixed 定位，避免被表格横向滚动裁切） -->
+  <div id="more-menu" class="more-menu hidden">
+    <button data-more="copy">Copy</button>
+    <button data-more="edit">Edit</button>
+    <button data-more="logs">Logs</button>
+    <button data-more="permission">Permission</button>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="rules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
