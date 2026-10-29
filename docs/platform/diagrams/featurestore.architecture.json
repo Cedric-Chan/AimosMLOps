@@ -67,7 +67,7 @@
       "id": "ds",
       "type": "backend",
       "label": "DataSource",
-      "sublabel": "管线追踪 · 只读投影",
+      "sublabel": "管线追踪 · 映射管理",
       "pos": [
         280,
         112

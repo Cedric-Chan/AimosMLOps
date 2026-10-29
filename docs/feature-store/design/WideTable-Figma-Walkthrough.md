@@ -59,7 +59,7 @@
 
 | 区块                                     | 导出稿                                       | 状态  |
 | -------------------------------------- | ----------------------------------------- | --- |
-| Source Type Hive / SQL                 | 双按钮 + 文案 Hive / SQL                       | 已对齐 |
+| Source Type Hive / SQL                 | 双按钮 + 文案 Hive / SQL                       | demo 已对齐；**线上当前仅 Hive 可选**（SQL 为预留能力，见下注） |
 | Data Server、Hive 表字段、SQL 编辑器           | 含行号区、全屏编辑                                 | 已对齐 |
 | Columns：idle / parsing / ready / error | 含 Select All、Search columns…              | 已对齐 |
 | Entity Column 多选、EventTime Column      | 同左                                        | 已对齐 |
@@ -67,6 +67,12 @@
 | Config / Last Instance 页签              | 同左                                        | 已对齐 |
 | Last Instance 摘要块                      | Status、Instance ID、Data Source、Statistics | 已对齐 |
 | 底部提示文案                                 | Node · …                                  | 已对齐 |
+
+
+> **注（线上口径）**：Frame Table 节点的 **Source Type 当前线上仅提供 `Hive`** 一个可选项
+> （代码中 `SOURCE_TYPE_OPTIONS = ['Hive']`）。Figma 稿与 demo 原型中的 **SQL 双按钮为预留设计**，
+> 尚未在线上启用。同理，线上顶栏历史按钮文案为 **`Run History`**（进入只读运行视图时显示 `History Run`），
+> 节点卡片标题渲染为 **`From Table`**。
 
 
 ## 4. 其他节点面板（CanvasPage 各 Panel）

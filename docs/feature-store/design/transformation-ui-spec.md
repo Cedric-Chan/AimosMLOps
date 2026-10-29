@@ -20,8 +20,19 @@
 - **表格**：列 — Name、Version、Type、Language、Status、Region、Owner、CreateTime、Description、Action。同名多 Version 时 **Name 列 rowspan**（按当前分页切片合并，不跨页）。
 - **Status**：DRAFT / ENABLED / DISABLED / PENDING 胶囊样式。
 - **Action**：**View** | **Test** | **More** | **Manage**。
-- **More**：Edit → 编辑页；Add → `/tf/new?copyFrom=&copyVersion=`；Monitor → 占位弹窗。
-- **Manage**：**Draft**（仅 DISABLED）、**Enable**（仅 DRAFT）、**Disable**（仅 ENABLED，二次确认）、**Delete**（DRAFT/DISABLED，确认）。
+- **More**：**Edit**（仅 DRAFT）→ 编辑页；Add → `/tf/new?copyFrom=&copyVersion=`；Monitor → 占位弹窗。
+- **Manage**：**Draft**（仅 PENDING）、**Enable**（仅 PENDING）、**Disable**（PENDING / ENABLED，二次确认）、**Delete**（仅 DISABLED，确认）。
+- **状态 × 操作矩阵**（以线上实现为准，四个状态：DRAFT / ENABLED / DISABLED / PENDING）：
+
+  | 状态 | Edit | Draft | Enable | Disable | Delete |
+  |------|:----:|:-----:|:------:|:-------:|:------:|
+  | **DRAFT** | ✅ | — | — | — | — |
+  | **PENDING** | — | ✅ | ✅ | ✅ | — |
+  | **ENABLED** | — | — | — | ✅ | — |
+  | **DISABLED** | — | — | — | — | ✅ |
+
+  即：**DRAFT 只能编辑**（写好草稿提交后进入 PENDING）；**PENDING 是送审态**，可退回草稿（Draft）、直接启用（Enable）或停用（Disable）；**ENABLED 只能停用**；**DISABLED 只能删除**。
+  > 注：Draft 与 Enable 的门禁同为 PENDING，含义是「草稿提交后由待审态决定启用或退回」，与早期规格中「Enable 仅 DRAFT」的描述不同 —— 以线上实现为准。
 - **Test 弹窗**：标题 `{Name} {Version} Transformation Test`；**New Test** | **History**；Region 取自该版本 **regions**；JSON 填参、Input/Output 表、Duration、**Cancel / Test / OK**；History 支持 Query/Reset、Load、Detail。
 
 ## 详情页（Add / Edit）

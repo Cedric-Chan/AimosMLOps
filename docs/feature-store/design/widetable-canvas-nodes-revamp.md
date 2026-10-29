@@ -3,6 +3,10 @@
 > **状态**：产品规格（阶段 B）。实现见 React 原型 [`prototypes/feature-widetable/`](../../prototypes/feature-widetable/)。  
 > **曾用名**：Data Sink → **Data Ingestion**；END → **Data Cleaning**。
 
+> **命名口径**：顶栏历史按钮线上文案为 **`Run History`**（进入只读运行视图后显示 `History Run`）。
+> 本文档下文的 `Instance History` 是原型叫法，与线上不一致 —— **以线上为准**。
+> 节点卡片标题线上渲染为 **`From Table`**（非 `Frame Table`；`Frame Table` 是拼接表头的概念名）。
+
 **关联**：[产品原型图 §3.5.2](front-design/产品原型图.md)；画布交互（指针模式、节点密度、实例信息条）见 [`widetable-canvas-interaction-revamp.md`](widetable-canvas-interaction-revamp.md)。
 
 ### 从列表 Copy 新建画布
