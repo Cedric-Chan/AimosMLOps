@@ -28,10 +28,12 @@ const MM_APP = 'apps/model-mgmt/index.html';
 const LLM_APP = 'apps/llm-mgmt/index.html';
 const MLFLOW_APP = 'apps/mlflow/index.html';
 const MD_APP = 'apps/model-deployment/index.html';
+const OS_APP = 'apps/orches-service/index.html';
+const AS_APP = 'apps/agent-service/index.html';
 
 /* 应用缓存版本号：改动任一原型 app 后递增，强制浏览器刷新 iframe 里的 index.html
  * （应用的 index.html 被缓存而 assets 哈希已换时会出现空白页面） */
-const APPS_VERSION = '20260909b';
+const APPS_VERSION = '20261029a';
 const ARCH_APP = 'apps/architecture/index.html';
 
 const NAV = [
@@ -40,18 +42,12 @@ const NAV = [
     label: 'Online Runtime',
     icon: ICONS.onlineRuntime,
     items: [
-      { id: 'orches-service', label: 'Orches Service', type: 'placeholder',
-        desc: '传统模型实时服务的编排入口：在线推理服务的注册、编排、发布与治理。原型与交互规格待设计。',
-        notes: ['对应线上平台 Online Runtime / Orches Service 页面', '待补充：服务列表视图、编排画布、版本与流量治理'],
-        doc: `${GITHUB_BASE}/docs/platform/module-inventory.md` },
-      { id: 'llm-workflow', label: 'LLM Workflow', type: 'placeholder',
-        desc: 'AI Workflow 编排页：LLM 应用 / 工作流的搭建、调试与运行。原型与交互规格待设计。',
-        notes: ['对应线上平台 Online Runtime / LLM Workflow 页面', '待补充：Workflow 画布、节点配置、调试与发布链路'],
-        doc: `${GITHUB_BASE}/docs/platform/module-inventory.md` },
-      { id: 'agent-app', label: 'Agent App', type: 'placeholder', badge: 'Future',
-        desc: '未来空槽位：预留承载 Agent 应用的模块，当前不做设计。',
-        notes: ['真实平台导航中的预留扩展位', '待 Agent 应用形态明确后再启动设计'],
-        doc: `${GITHUB_BASE}/docs/platform/module-inventory.md` },
+      { id: 'orches-service', label: 'Orches Service', type: 'iframe', app: OS_APP,
+        desc: '传统模型实时服务的编排入口：服务（FeatureService）与版本（ServiceVersion）两层实体；版本状态 DRAFT / ENABLED / DISABLED，Router 列独立表示是否在流量中；服务行内展开版本表；编排画布编辑 versionInfo.chartConfig 图表 DSL（节点 + 边）；Traffic Router 流量路由与 Tracing 采样；Tracing Log 链路日志；Permission 权限配置。',
+        doc: `${GITHUB_BASE}/docs/orches-service/spec.md` },
+      { id: 'agent-service', label: 'Agent Service', type: 'iframe', app: AS_APP,
+        desc: 'LLM Agent 配置应用：Agent 是被在线调用的 LLM Prompt 配置（模型 + Prompt + Tools + 记忆轮数），不是编排图；列表行级状态 UnDeployed / Online；API Debug 仅在 Online 时可点；配置台（表单式四卡片 + Preview & Debug）、Version Management 抽屉、Space Resource 部署管理构成发布链路；Permission 控制应用权限。',
+        doc: `${GITHUB_BASE}/docs/agent-service/spec.md` },
     ],
   },
   {
@@ -233,11 +229,12 @@ function showIframe(mod, item) {
   const iframe = contentBody.querySelector('iframe');
   iframe.addEventListener('load', () => {
     // 同源注入：隐藏原型应用自带的侧边栏，保持与真实平台一致的单一导航
+    // （排除 .drawer：Orches 的 Snap Shot / Agent 的 Version Management 抽屉也是 aside，不能被一起隐藏）
     try {
       const doc = iframe.contentDocument;
       if (doc && doc.head) {
         const style = doc.createElement('style');
-        style.textContent = 'aside{display:none!important}';
+        style.textContent = 'aside:not(.drawer){display:none!important}';
         doc.head.appendChild(style);
       }
     } catch (e) { /* 跨域时忽略 */ }

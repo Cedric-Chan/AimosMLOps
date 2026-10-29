@@ -8,9 +8,8 @@
 
 | 子模块 | 状态 | 说明 | 待设计事项 |
 |--------|------|------|-----------|
-| Orches Service | 🟡 | 传统模型实时服务的编排入口 | 服务列表、编排画布、版本与流量治理 |
-| LLM Workflow | 🟡 | AI Workflow 编排页 | Workflow 画布、节点配置、调试与发布链路 |
-| Agent App | 🔮 | 未来空槽位，承载 Agent 应用 | 待 Agent 应用形态明确后启动 |
+| Orches Service | ✅ | 传统模型实时服务编排：服务（FeatureService）与版本（ServiceVersion）两层实体；版本状态 DRAFT / ENABLED / DISABLED（Router 列独立表示是否在流量中）；服务行内展开版本表；编排画布编辑 `versionInfo.chartConfig` 图表 DSL；Traffic Router 流量路由；Tracing Log 链路日志；Batch Test；Permission。原型 `apps/orches-service/`，规格见 [orches-service/spec.md](../orches-service/spec.md)，评测与责任层见 [evals-spec.md](../orches-service/evals-spec.md) | 规格第 15 节待确认项（DISABLED 行 Router 显示值等未采集项） |
+| Agent Service | ✅ | LLM Agent 配置应用：Agent 是可被在线调用的 LLM Prompt 配置（模型 + Prompt + Tools + 记忆轮数），不是编排图；列表行级状态 UnDeployed / Online，API Debug 仅 Online 可点；配置台（表单式四卡片 + Preview & Debug）→ Version Management 抽屉 → Space Resource 部署管理构成发布链路；Permission。原型 `apps/agent-service/`，规格见 [agent-service/spec.md](../agent-service/spec.md) | 规格第 12 节待确认项（角色枚举、路由 `{agentId}` 取值、部署状态机细节） |
 
 ## AI Hub
 

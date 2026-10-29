@@ -20,4 +20,8 @@ for dir in apps/*/; do
   fi
 done
 
+# 剔除本地产物：与 .gitignore 的 *.visual-check.* 同源。
+# 整目录拷贝会把视觉验证产生的截图/JSON 卷进来（约 2MB），既不该进 gh-pages 也不该进 Mypage。
+find local-dist -name '*.visual-check.*' -delete
+
 echo "assembled: $(ls local-dist/apps | tr '\n' ' ')"

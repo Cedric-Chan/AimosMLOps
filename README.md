@@ -14,9 +14,8 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 
 | 模块 | 子模块 | 现状 | 说明 |
 |------|--------|------|------|
-| **Online Runtime** | Orches Service | Placeholder | 传统模型实时服务编排 |
-| | LLM Workflow | Placeholder | AI Workflow 编排 |
-| | Agent App | Future | 未来空槽位，预留 |
+| **Online Runtime** | Orches Service | ✅ 原型已覆盖 | 传统模型实时服务编排：服务 / 版本两层、版本状态 DRAFT·ENABLED·DISABLED、行内版本表、编排画布 DSL、Traffic Router、Tracing Log、Batch Test、Permission；规格见 docs/orches-service/spec.md |
+| | Agent Service | ✅ 原型已覆盖 | LLM Agent Prompt 配置（非编排图）：UnDeployed / Online 状态与 API Debug 门控、配置台 + Version Management + Space Resource 部署链路、Permission；规格见 docs/agent-service/spec.md |
 | **AI Hub** | LLM Mgmt | ✅ 原型已覆盖 | LLM 资产接入管理（Region / Provider / Model Type / Team Access / Check 连通性）；规格见 docs/llm-mgmt/spec.md |
 | | Skill Market | Placeholder | Skill 资产市场 |
 | | Knowledge Base | Placeholder | 知识库 |
@@ -47,11 +46,10 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
   ┌───────────────┐   ┌──────────▼───────────┐   ┌────────────────────┐
                       │  DS GitLab    │──▶│ Model Platform        │──▶│ Online Runtime      │
                       │  (算法工程仓)  │   │ MLFlow（训练迭代管理）  │   │ Orches Service      │
-  └───────────────┘   │ Model Mgmt（逻辑容器）  │   │ LLM Workflow        │
-                      │ Model Experiment（训练）│   │ Agent App（预留）    │
-                      │ Model Deployment（部署）│   └─────────┬──────────┘
-                      └──────────┬───────────┘             │ 业务请求
-                                 │ 训练数据                  ▼
+  └───────────────┘   │ Model Mgmt（逻辑容器）  │   │ Agent Service       │
+                      │ Model Experiment（训练）│   └─────────┬──────────┘
+                      │ Model Deployment（部署）│             │ 业务请求
+                      └──────────┬───────────┘             ▼
                       ┌──────────▼───────────┐   ┌────────────────────┐
                       │ Feature Store         │──▶│  在线推理服务        │
                       │ DS→FS→TF→FG→FM→WT     │   │  （特征检索 Serving） │
@@ -63,7 +61,7 @@ Aimos 平台（Monee 通用风控模型平台）的**平台级统一设计仓库
 
 - **Model Platform 链路**：DS GitLab（算法工程仓）→ MLFlow（内部改造嵌入的开源 MLflow，训练迭代管理：Run 对比 / 指标 / Artifact / 模型版本）→ Model Experiment（训练编排，Ray 执行，产物回传 S3 并注册）→ Model Mgmt（Model / ModelVersion / Build 登记）→ Model Deployment（发布上线）。
 - **Feature Store 链路**：DataSource → FeatureSource → Transformation → FeatureGroup（离在线一致性保障层）→ FeatureMap（检索文档）/ Wide Table（离线宽表，Point-in-Time Join）。
-- **Online Runtime**：承载传统模型实时服务（Orches Service）、AI Workflow，以及未来的 Agent App。
+- **Online Runtime**：承载传统模型实时服务（Orches Service）、Agent Service（LLM Agent 配置与部署），以及 AI Workflow。
 - 详见 [docs/platform/architecture.md](docs/platform/architecture.md) 与各模块文档索引。
 
 ## 仓库结构
@@ -83,6 +81,8 @@ Aimos MLOps/
 │   └── feature-entity/            # Feature Store / Feature Entity 原型（纯静态，无构建）
 │   └── feature-tag/               # Feature Store / Feature Tag 原型（纯静态，无构建）
 │   └── llm-mgmt/                  # AI Hub / LLM Mgmt 原型（纯静态，无构建）
+│   └── orches-service/            # Online Runtime / Orches Service 原型（纯静态，无构建）
+│   └── agent-service/             # Online Runtime / Agent Service 原型（纯静态，无构建）
 ├── docs/
 │   ├── platform/                  # 平台级文档（架构总览、模块清单）
 │   ├── user-mgmt/                 # User 模块领域规则与交互规格
@@ -103,16 +103,26 @@ Aimos MLOps/
 - **文档**：平台级放 `docs/platform/`，模块级分别放 `docs/feature-store/`、`docs/model-experiment/`。
 - 发布站点用 `./scripts/deploy.sh`（推 `gh-pages` 后 GitHub 自动重建 Pages）。
 
-## 部署（GitHub 单一远端）
+## 部署（四端同步）
+
+对 demo 交互页的任何调整**必须同时更新四端**：
 
 ```bash
-./scripts/deploy.sh        # 组装站点 → 推 main/gh-pages 到 GitHub → Pages 自动重建（含状态轮询）
-./scripts/deploy.sh --no-watch
+./scripts/publish-all.sh -m "改动说明"
 ```
 
-- 源码（main）与部署产物（gh-pages）**都推 GitHub**（`origin`），GitHub 的 `pages-build-deployment` 在 gh-pages 更新后自动重建站点
-- 线上站点：<https://cedric-chan.github.io/AimosMLOps/>
-- 本地预览：`./scripts/assemble.sh` 后对 `local-dist/` 起任意静态服务器
+| 端 | 地址 | 说明 |
+|---|---|---|
+| 本地 | `local-dist/` | 组装后 `python3 -m http.server 8090` 预览 |
+| GitHub 源码 | <https://github.com/Cedric-Chan/AimosMLOps> | `main` 分支 |
+| GitHub Pages | <https://cedric-chan.github.io/AimosMLOps/> | `gh-pages` 分支，更新后自动重建 |
+| Mypage（内网） | <https://mypage.shopee.io/p/cedric-chencan/aimos-aio/> | 项目 id `4669`，每次上传自动激活新版本 |
+
+常用选项：`--no-commit`（工作区已提交时跳过 commit）、`--no-watch`（跳过 Pages 构建轮询）、`--only <local|github|pages|mypage>`（只发一端）。
+
+- 只推 GitHub（不含 Mypage）仍可用 `./scripts/deploy.sh`
+- `./scripts/assemble.sh` 会剔除 `*.visual-check.*` 本地产物，gh-pages 与 Mypage 都不会带上
+- 改了任一 `apps/` 原型，记得递增 `assets/shell.js` 的 `APPS_VERSION`，否则 iframe 命中缓存显示旧页面
 
 ## 历史仓库（已冻结，不再维护）
 

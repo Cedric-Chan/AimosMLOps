@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orches Service · Aimos</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+  <!-- ══════════ 1. 服务列表页 ══════════ -->
+  <div id="page-list">
+    <div class="page">
+
+      <!-- 筛选栏（可折叠） -->
+      <div class="card filter-card">
+        <div class="filter-grid">
+          <div class="filter-item"><label>FeatureService：</label><input id="f-name" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>Region：</label>
+            <select id="f-region"><option value="">Please select</option></select>
+          </div>
+          <div class="filter-item"><label>Biz Team：</label>
+            <select id="f-team"><option value="">Please select</option></select>
+          </div>
+          <div class="filter-item"><label>Owner：</label>
+            <select id="f-owner"><option value="">Please select</option></select>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-default" id="btn-reset">Reset</button>
+            <button class="btn btn-primary" id="btn-query">Query</button>
+            <button class="link-btn collapse-toggle" id="btn-collapse">Collapse ∧</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 列表卡片 -->
+      <div class="card">
+        <div class="toolbar">
+          <span class="toolbar-spacer"></span>
+          <label class="owned-check"><input type="checkbox" id="owned-me"> Owned by me</label>
+          <button class="btn btn-primary" id="btn-add-service">Add Service</button>
+          <div class="toolbar-icons">
+            <button class="icon-btn" id="btn-refresh" title="Refresh">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
+            </button>
+            <button class="icon-btn" id="btn-info" title="模块说明">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="mm-table svc-table">
+            <thead>
+              <tr>
+                <th class="col-expand"></th>
+                <th>FeatureService</th><th>Region</th><th>Biz Team</th><th>Owner</th>
+                <th>CreateTime</th><th>UpdateTime</th><th class="col-action">Action</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span id="page-total" class="page-total"></span>
+          <div id="page-buttons" class="page-buttons"></div>
+          <select id="page-size">
+            <option value="10" selected>10 / page</option>
+            <option value="20">20 / page</option>
+            <option value="50">50 / page</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ 2. 编排画布 ══════════ -->
+  <div id="page-pipeline" hidden>
+    <div class="pipeline-wrap">
+      <div class="pipeline-head">
+        <button class="back-arrow" id="btn-pipe-back" title="Back">←</button>
+        <span class="pipe-title" id="pipe-title"></span>
+        <span class="badge" id="pipe-badge"></span>
+        <div class="pipe-spacer"></div>
+        <div class="menu-wrap">
+          <button class="btn btn-default" id="btn-graph-config">Graph Config ∨</button>
+          <div class="dropdown hidden" id="graph-config-menu">
+            <button class="dropdown-item" data-gc="export">Export DSL</button>
+            <button class="dropdown-item" data-gc="import">Import DSL</button>
+          </div>
+        </div>
+        <button class="btn btn-primary run-btn" id="btn-run">
+          Run <span class="run-badge" id="run-count">0</span>
+        </button>
+        <button class="btn btn-default" id="btn-save">Save</button>
+        <button class="btn btn-default" id="btn-pipe-enable">Enable</button>
+      </div>
+
+      <div class="pipeline-body">
+        <div class="canvas-scroll" id="canvas-scroll">
+          <div class="canvas" id="canvas">
+            <svg class="canvas-edges" id="canvas-edges"></svg>
+            <div class="canvas-nodes" id="canvas-nodes"></div>
+            <div class="canvas-hint">Click a node to open Snap Shot · 画布示意，节点位置取自 DSL position</div>
+          </div>
+        </div>
+
+        <!-- Snap Shot 抽屉 -->
+        <aside class="drawer hidden" id="snapshot">
+          <div class="drawer-head">
+            <span class="drawer-title">Snap Shot<span class="drawer-node" id="snapshot-node"></span></span>
+            <button class="modal-close" id="btn-drawer-close">×</button>
+          </div>
+          <div class="tabs" id="snapshot-tabs">
+            <button class="tab current" data-tab="RESULT">RESULT</button>
+            <button class="tab" data-tab="DETAIL">DETAIL</button>
+            <button class="tab" data-tab="TRACING">TRACING</button>
+          </div>
+          <div class="drawer-body" id="snapshot-body"></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ 3. 流量路由 ══════════ -->
+  <div id="page-router" hidden>
+    <div class="page">
+      <div class="detail-header">
+        <button class="back-arrow" id="btn-router-back" title="Back">←</button>
+        <span class="detail-title">Traffic Router</span>
+        <span class="detail-sub" id="router-sub"></span>
+      </div>
+
+      <div class="card">
+        <div class="tabs tabs-line" id="router-tabs">
+          <button class="tab current" data-rtab="manage">Manage</button>
+          <button class="tab" data-rtab="history">History</button>
+        </div>
+
+        <!-- Manage -->
+        <div id="router-manage">
+          <div class="router-row">
+            <label class="router-label">Enabled Version</label>
+            <div class="router-control">
+              <span class="router-value" id="rt-enabled-version">Not configured</span>
+            </div>
+          </div>
+
+          <div class="router-row">
+            <label class="router-label">Online Traffic</label>
+            <div class="router-control">
+              <span class="router-sublabel">Max QPS</span>
+              <div class="stepper">
+                <button class="stepper-btn" data-step="qps:-1">−</button>
+                <input type="number" id="rt-qps" min="0" step="1" value="100">
+                <button class="stepper-btn" data-step="qps:1">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="router-row">
+            <label class="router-label">Dry Run Traffic</label>
+            <div class="router-control">
+              <span class="router-sublabel">Trigger Rate</span>
+              <div class="stepper">
+                <button class="stepper-btn" data-step="rate:-1">−</button>
+                <input type="number" id="rt-rate" min="0" max="100" step="1" value="10">
+                <span class="unit">%</span>
+                <button class="stepper-btn" data-step="rate:1">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="router-block">
+            <div class="router-block-title">Advanced Config</div>
+
+            <div class="router-row">
+              <label class="router-label">Tracing Sampling</label>
+              <div class="router-control slider-control">
+                <input type="range" id="rt-logSample" min="0" max="100" step="1" value="0">
+                <span class="slider-val" id="rt-logSample-val">0%</span>
+              </div>
+            </div>
+
+            <div class="router-row">
+              <label class="router-label">Log Enable Rate</label>
+              <div class="router-control slider-control">
+                <input type="range" id="rt-logEnable" min="0" max="100" step="1" value="100">
+                <span class="slider-val" id="rt-logEnable-val">100%</span>
+              </div>
+            </div>
+
+            <div class="router-row">
+              <label class="router-label">Allow Partial Exec</label>
+              <div class="router-control">
+                <button class="switch" id="rt-partial" role="switch" aria-checked="false"><i></i></button>
+              </div>
+            </div>
+
+            <div class="router-row">
+              <label class="router-label">Open Tracing Detail</label>
+              <div class="router-control">
+                <button class="switch on" id="rt-tracingDetail" role="switch" aria-checked="true"><i></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="router-footer">
+            <span class="router-hint">Trigger Rate 在界面是百分比，写入 <code>routerConfig.dryRunTriggerRate</code> 时换算为小数。</span>
+            <button class="btn btn-default" id="btn-router-cancel">Cancel</button>
+            <button class="btn btn-primary" id="btn-router-submit">Submit</button>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div id="router-history" hidden>
+          <div class="table-scroll">
+            <table class="mm-table">
+              <thead><tr><th>Operation Time</th><th>Operator</th><th>Change Details</th></tr></thead>
+              <tbody id="router-history-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ 4. 链路日志 ══════════ -->
+  <div id="page-tracing" hidden>
+    <div class="page">
+      <div class="detail-header">
+        <button class="back-arrow" id="btn-tracing-back" title="Back">←</button>
+        <span class="detail-title" id="tracing-title"></span>
+      </div>
+
+      <div class="card filter-card">
+        <div class="filter-grid tracing-filters">
+          <div class="filter-item"><label>ServiceVersion：</label>
+            <select id="t-version"><option value="">Please select</option></select>
+          </div>
+          <div class="filter-item"><label>TraceId：</label><input id="t-traceid" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>Status：</label>
+            <select id="t-status"><option value="">Please select</option><option>success</option><option>failed</option></select>
+          </div>
+          <div class="filter-item"><label>Tag：</label>
+            <select id="t-tag"><option value="">Please select</option><option>test-run</option></select>
+          </div>
+          <div class="filter-item"><label>Duration(ms)：</label>
+            <input id="t-dur-min" class="range-input" type="text" placeholder="min">
+            <span class="range-sep">~</span>
+            <input id="t-dur-max" class="range-input" type="text" placeholder="max">
+          </div>
+          <div class="filter-item"><label>FlowNo：</label><input id="t-flow" type="text" placeholder="Please enter"></div>
+          <div class="filter-item"><label>ReqTime：</label>
+            <input id="t-time-start" class="range-input" type="text" placeholder="start  yyyy-MM-dd HH:mm:ss">
+            <span class="range-sep">~</span>
+            <input id="t-time-end" class="range-input" type="text" placeholder="end    yyyy-MM-dd HH:mm:ss">
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-default" id="btn-trace-reset">Reset</button>
+            <button class="btn btn-primary" id="btn-trace-query">Query</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-scroll">
+          <table class="mm-table trace-table">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" id="t-check-all"></th>
+                <th>ReqTime</th><th>Status</th><th>Tag</th><th>Duration(ms)</th>
+                <th>FlowNo</th><th>ServiceVersion</th><th>TraceId</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="trace-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Snap Shot 抽屉（列表页复用：Tracing Detail） ══════════ -->
+  <aside class="drawer drawer-global hidden" id="snapshot-global">
+    <div class="drawer-head">
+      <span class="drawer-title">Snap Shot<span class="drawer-node" id="snapshot-global-node"></span></span>
+      <button class="modal-close" id="btn-drawer-global-close">×</button>
+    </div>
+    <div class="tabs" id="snapshot-global-tabs">
+      <button class="tab current" data-tab="RESULT">RESULT</button>
+      <button class="tab" data-tab="DETAIL">DETAIL</button>
+      <button class="tab" data-tab="TRACING">TRACING</button>
+    </div>
+    <div class="drawer-body" id="snapshot-global-body"></div>
+  </aside>
+  <div class="drawer-mask hidden" id="drawer-mask"></div>
+
+  <!-- ══════════ Add Service / Add Version 弹窗 ══════════ -->
+  <div id="service-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">
+        <span id="sm-title">Add FeatureService</span>
+        <button class="modal-close" id="btn-sm-close">×</button>
+      </div>
+
+      <div class="form-item">
+        <label id="sm-name-label"><i>*</i>FeatureService：</label>
+        <input id="sm-name" type="text" placeholder="Please enter">
+        <div class="form-err hidden" id="err-sm-name"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Region：</label>
+        <select id="sm-region"><option value="">Please select</option></select>
+        <div class="form-err hidden" id="err-sm-region"></div>
+      </div>
+      <div class="form-item">
+        <label>Owner：</label>
+        <select id="sm-owner"><option value="">Please select</option></select>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>Biz Team：</label>
+        <select id="sm-team" disabled><option value="">Please select owner firstly!</option></select>
+        <div class="form-err hidden" id="err-sm-team"></div>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>ServiceVersion：</label>
+        <input id="sm-version" type="text" value="V1">
+        <div class="form-err hidden" id="err-sm-version"></div>
+      </div>
+      <div class="form-item">
+        <label>Description：</label>
+        <textarea id="sm-desc" rows="3" placeholder="Optional"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-sm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-sm-submit">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Permission 弹窗 ══════════ -->
+  <div id="permission-modal" class="modal-overlay hidden">
+    <div class="modal modal-wide">
+      <div class="modal-title">
+        <span id="pm-title">Permission</span>
+        <button class="modal-close" id="btn-pm-close">×</button>
+      </div>
+
+      <div class="perm-add-row">
+        <select id="pm-subject-type" class="perm-type">
+          <option value="User">User</option>
+          <option value="Team">Team</option>
+        </select>
+        <select id="pm-subject"><option value="">Please select</option></select>
+        <select id="pm-role">
+          <option>Viewer</option><option>Invoker</option><option>Editor</option><option>Owner</option>
+        </select>
+        <button class="btn btn-primary btn-sm" id="btn-pm-add">Add</button>
+      </div>
+
+      <div class="perm-list" id="pm-list"></div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="btn-pm-done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Batch Test 弹窗 ══════════ -->
+  <div id="batch-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">
+        <span id="bm-title">Batch Test</span>
+        <button class="modal-close" id="btn-bm-close">×</button>
+      </div>
+
+      <div class="form-item">
+        <label>Upload Type：</label>
+        <select id="bm-type"><option>CSV</option></select>
+      </div>
+
+      <div class="form-item">
+        <label><i>*</i>Upload File：</label>
+        <div class="upload-box" id="bm-upload">
+          <input type="file" id="bm-file" accept=".csv" hidden>
+          <span class="upload-icon">⇪</span>
+          <span class="upload-text" id="bm-file-name">Click to Upload</span>
+          <span class="upload-sub">Only CSV is supported</span>
+        </div>
+        <div class="form-hint">CSV headers should include all input parameters from the start node of this version</div>
+        <div class="form-err hidden" id="err-bm-file"></div>
+        <div class="verify-note hidden" id="bm-verify"></div>
+      </div>
+
+      <div class="form-item">
+        <label>Required headers：</label>
+        <div class="header-chips" id="bm-headers"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-default" id="btn-bm-verify">Verify</button>
+        <button class="btn btn-default" id="btn-bm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="btn-bm-submit">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="rules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

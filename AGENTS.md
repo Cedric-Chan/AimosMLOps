@@ -12,6 +12,31 @@ last resort, not a licence.
 
 ## Agent skills
 
+### 交互 Demo 的发布：改动即四端同步
+
+**任何对 demo 交互页（平台壳 `index.html` / `assets/` / `apps/`）的调整，必须同时更新四个目标**，不要只改本地或只推 GitHub：
+
+| 端 | 地址 / 位置 | 由谁负责 |
+|---|---|---|
+| 本地 | `local-dist/`（`python3 -m http.server 8090`） | `scripts/assemble.sh` |
+| GitHub 源码 | `origin/main` — https://github.com/Cedric-Chan/AimosMLOps | `git push origin main` |
+| GitHub Pages | https://cedric-chan.github.io/AimosMLOps/ | `gh-pages` 分支 |
+| Mypage（公司内网） | https://mypage.shopee.io/p/cedric-chencan/aimos-aio/ | `mypage project upload --project-id 4669` |
+
+**一条命令完成**：
+
+```bash
+./scripts/publish-all.sh -m "改动说明"
+```
+
+选项：`--no-commit`（工作区已提交）、`--no-watch`（跳过 Pages 构建轮询）、`--only <local|github|pages|mypage>`（只发一端）。
+
+注意事项：
+
+- `scripts/assemble.sh` 会剔除 `*.visual-check.*`（视觉验证残留，已被 `.gitignore` 排除），因此 gh-pages 与 Mypage 都不会带上它们。若新增其他本地产物，在 assemble 里加同样的 `find -delete`。
+- 改了任一 `apps/` 原型，必须递增 `assets/shell.js` 的 `APPS_VERSION`，否则 iframe 会命中浏览器缓存显示旧页面。
+- Mypage 项目默认 `restricted`，只有 `cedric-chencan` 能访问；分享用 `mypage project grant add --project-id 4669 --email <someone@shopee.io>`。
+
 ### Issue tracker
 
 Issues live as GitHub issues on `Cedric-Chan/AimosMLOps` (remote `origin`); use the `gh` CLI. See `docs/agents/issue-tracker.md`.
